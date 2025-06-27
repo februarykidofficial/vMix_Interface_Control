@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speaker Timer Controller</title>
     <style>
-        /* Variables for easy theme customization, from index_vmix.html */
         :root {
             --primary-color: #F05F57;
             --secondary-color: #360940;
@@ -106,7 +105,7 @@
             font-family: 'Inter', Monaco, 'Cascadia Code', monospace;
         }
 
-        /* Timer Styles from index_vmix.html */
+        /* Timer Styles */
         .timer-style-modern .timer-main {
             font-family: 'Inter', sans-serif;
             font-weight: 200;
@@ -192,6 +191,7 @@
             height: 100%;
             background: linear-gradient(90deg, var(--accent-color), #059669);
             border-radius: calc(4px * var(--timer-scale));
+            /* Changed transition to be faster and linear */
             transition: width 0.1s linear; 
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
             position: relative;
@@ -207,6 +207,7 @@
             background: var(--text-color);
             border-radius: 50%;
             box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+            /* Removed transition as it was not effective for this fixed right property */
         }
 
         .control-section {
@@ -280,7 +281,7 @@
         .btn-danger {
             background: linear-gradient(135deg, var(--danger-color), #dc2626);
             color: white;
-            box-shadow: 0 88px 24px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
         }
 
         .btn:disabled {
@@ -363,6 +364,25 @@
         .status-indicator.connected {
             background: var(--accent-color);
             box-shadow: 0 0 8px var(--accent-color);
+        }
+        
+        .debug-info {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: left;
+            word-break: break-all;
+            max-width: 300px; /* Adjust as needed */
+        }
+        .debug-info p {
+            margin: 5px 0;
+        }
+        .debug-info strong {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .settings-toggle {
@@ -615,12 +635,16 @@
 <body>
     <div class="background-decoration"></div>
     
-    <!-- Top Controls Section (from index_vmix.html) -->
     <div class="top-controls">
         <div class="connection-panel">
             <div class="connection-status">
                 <div id="statusIndicator" class="status-indicator"></div>
                 <span id="connectionText">vMix Connection</span>
+            </div>
+            <div id="debugInfo" class="debug-info" style="display: none;">
+                <p><strong>Status:</strong> <span id="debugStatus">Idle</span></p>
+                <p><strong>Command:</strong> <span id="debugCommand">N/A</span></p>
+                <p><strong>URL:</strong> <span id="debugUrl">N/A</span></p>
             </div>
         </div>
         
@@ -642,7 +666,6 @@
 
     <div class="container">
         <div class="main-panel">
-            <!-- Timer Display Section (from index_vmix.html) -->
             <div class="timer-container">
                 <div id="timerDisplay" class="timer-display timer-style-modern">
                     <span class="timer-main">40:00</span>
@@ -656,20 +679,19 @@
                 </div>
             </div>
             
-            <!-- Control Section (from index_vmix.html) -->
             <div class="control-section">
+                <div class="control-buttons">
+                    <button id="mainBtn" class="btn btn-primary">Start</button>
+                </div>
+                
                 <div id="micStatus" class="mic-status mic-muted">
                     <div class="mic-indicator"></div>
                     <span>Microphone Muted</span>
-                </div>
-                <div class="control-buttons">
-                    <button id="mainBtn" class="btn btn-primary">Start</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Settings Panel (from index_vmix.html) -->
     <div id="settingsPanel" class="settings-panel">
         <div class="settings-title">Settings</div>
         
@@ -768,7 +790,7 @@
     <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script>
-        // Color schemes data (from index_vmix.html)
+        // Color schemes data
         const colorSchemes = [
             { name: 'Default', primary: '#F05F57', secondary: '#360940', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Ocean', primary: '#0891b2', secondary: '#0c4a6e', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
@@ -793,7 +815,18 @@
             { name: 'Stone', primary: '#57534e', secondary: '#1c1917', accent: '#78716c', warning: '#f59e0b', danger: '#ef4444' }
         ];
 
-        // Timer Controller Class - combines logic from both versions
+        // Global function to update debug info
+        function updateDebugInfo(status, command, url) {
+            const debugPanel = document.getElementById('debugInfo');
+            if (debugPanel) {
+                document.getElementById('debugStatus').textContent = status;
+                document.getElementById('debugCommand').textContent = command || 'N/A';
+                document.getElementById('debugUrl').textContent = url || 'N/A';
+                debugPanel.style.display = 'block'; // Ensure panel is visible
+            }
+        }
+
+        // Timer Controller Class
         class TimerController {
             constructor() {
                 this.isRunning = false;
@@ -802,28 +835,22 @@
                 this.pausedTime = 0;
                 this.totalPausedTime = 0;
                 this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
-                this.vmixConnection = null; // Not used anymore, kept for compatibility
-                this.micInput = 'Mic1'; // Changed from micInputName to micInput as per instructions
+                this.vmixConnection = null;
+                this.micInput = 'Mic1';
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
-                this.vmixConnected = false; // Add connection status tracking
                 
                 this.init();
             }
 
             init() {
                 this.setupEventListeners();
-                this.loadSettings(); // Load settings first
+                this.loadSettings();
                 this.updateDisplay();
                 this.renderColorSchemes();
                 this.setupTimerStyles();
-                // Initial connection attempt when the page loads, using loaded settings
-                // The actual connection logic is handled by the global `testVMixConnection`
-                // which explicitly reads values from input fields for robustness.
-                // Call testVMixConnection on load to check and update status
-                testVMixConnection();
             }
 
             setupEventListeners() {
@@ -1056,40 +1083,54 @@
                 }, 3000);
             }
 
-            // --- vMix Connection Logic ---
-            sendVMixCommand(command) {
-                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?${command}`;
-                console.log('Sending vMix command:', url);
-                // Create an image element to make the request (works around CORS)
-                const img = new Image();
-                img.onload = () => console.log('vMix command sent successfully');
-                img.onerror = () => console.log('vMix command sent (expected error in browser)');
-                img.src = url;
-            }
-
             updateMicStatus(isLive) {
                 const micStatus = document.getElementById('micStatus');
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    // Turn on audio for the microphone input
-                    this.sendVMixCommand(`Function=Audio&Input=${encodeURIComponent(this.micInput)}`);
+                    this.sendVMixCommand(`FUNCTION Audio ${this.micInput}`);
                 } else {
                     micStatus.className = 'mic-status mic-muted';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    // Turn off audio for the microphone input
-                    this.sendVMixCommand(`Function=AudioOff&Input=${encodeURIComponent(this.micInput)}`);
+                    this.sendVMixCommand(`FUNCTION AudioOff ${this.micInput}`);
                 }
             }
-            // --- End vMix Connection Logic ---
 
-            // Save Settings (from index_vmix.html)
+            sendVMixCommand(command) {
+                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?${command}`;
+                // Update debug info
+                updateDebugInfo('Sending command...', command, url);
+
+                // Try with credentials first (for same-origin)
+                fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' }).then(response => {
+                    if (response.ok) {
+                        console.log('vMix command sent successfully:', command);
+                        updateConnectionStatus(true);
+                        updateDebugInfo('✅ Command sent successfully', command, url);
+                    } else {
+                        console.warn('vMix command sent but got non-200 response:', response.status);
+                        updateDebugInfo(`⚠️ Response: HTTP ${response.status}`, command, url);
+                    }
+                }).catch(error => {
+                    console.log('CORS failed, trying no-cors mode for command:', command);
+                    updateDebugInfo('CORS failed, trying no-cors...', command, url);
+                    // Fallback to no-cors mode
+                    fetch(url, { method: 'GET', mode: 'no-cors' }).then(() => {
+                        updateDebugInfo('⚠️ Sent via no-cors mode', command, url);
+                    }).catch(e => {
+                        console.error('vMix command failed completely:', e);
+                        updateConnectionStatus(false);
+                        updateDebugInfo('❌ Command failed', command, url);
+                    });
+                });
+            }
+
             saveSettings() {
                 const settings = {
                     duration: this.duration,
                     vmixIP: this.vmixIP,
                     vmixPort: this.vmixPort,
-                    micInput: this.micInput, // Changed from micInputName to micInput
+                    micInput: this.micInput,
                     timerScale: document.documentElement.style.getPropertyValue('--timer-scale') || '1',
                     timerStyle: this.currentStyle,
                     colors: {
@@ -1112,21 +1153,20 @@
                 window.timerSettings = settings;
             }
 
-            // Load Settings (from index_vmix.html)
             loadSettings() {
                 const settings = window.timerSettings || {};
                 
                 if (settings.duration) this.duration = settings.duration;
                 if (settings.vmixIP) this.vmixIP = settings.vmixIP;
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
-                if (settings.micInput) this.micInput = settings.micInput; // Changed from micInputName to micInput
+                if (settings.micInput) this.micInput = settings.micInput;
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
                 
                 // Update UI elements
                 document.getElementById('timerDuration').value = this.duration / (60 * 1000);
                 document.getElementById('vmixIP').value = this.vmixIP;
                 document.getElementById('vmixPort').value = this.vmixPort;
-                document.getElementById('micInput').value = this.micInput; // Changed from micInputName to micInput
+                document.getElementById('micInput').value = this.micInput;
                 document.getElementById('timerStyle').value = this.currentStyle;
                 
                 if (settings.timerScale) {
@@ -1170,13 +1210,13 @@
         // Initialize the controller
         const controller = new TimerController();
 
-        // Settings panel toggle (from 01.html and index_vmix.html)
+        // Settings panel functions
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('active');
         }
 
-        // Global functions for settings, now strictly following 01.html's pattern
+        // Connect to vMix function
         function connectToVMix() {
             const ip = document.getElementById('vmixIP').value;
             const port = document.getElementById('vmixPort').value;
@@ -1186,69 +1226,57 @@
             controller.vmixPort = port;
             controller.micInput = micInput;
             
-            // Test the connection
+            // Test connection with a simple API call
             testVMixConnection();
             controller.saveSettings();
         }
-
+            
+        // Test connection function
         function testConnection() {
             testVMixConnection();
         }
 
-        // ADD this new function after the testConnection function:
+        // New function to test vMix connection more robustly
         function testVMixConnection() {
-            const testUrl = `http://${controller.vmixIP}:${controller.vmixPort}/api/`;
-            
-            // Try to fetch vMix API info
-            fetch(testUrl, {
+            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/`;
+            updateDebugInfo('Testing connection...', 'N/A', url);
+
+            fetch(url, {
                 method: 'GET',
-                mode: 'no-cors'
-            }).then(() => {
-                // Connection attempt made
-                updateConnectionStatus(true);
-                console.log('vMix connection attempt successful');
-                        
-                // Test with a harmless command
-                controller.sendVMixCommand('Function=Cut');
-                        
-                setTimeout(() => {
-                    // Replaced alert with custom notification
-                    showNotification(`Connection test sent to vMix at ${controller.vmixIP}:${controller.vmixPort}\nCheck vMix for any activity to confirm connection.`, true);
-                }, 500);
+                mode: 'cors', // Try cors mode first to get a proper response status
+                credentials: 'omit'
+            }).then(response => {
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                    updateDebugInfo('✅ Connection test successful', 'N/A', url);
+                    // Use a custom message box instead of alert
+                    showMessageBox('Connection Test', 'Connection test sent to vMix. Check vMix for confirmation.', 'success');
+                } else {
+                    updateConnectionStatus(false);
+                    updateDebugInfo(`⚠️ Connection test responded with HTTP ${response.status}`, 'N/A', url);
+                    // Use a custom message box instead of alert
+                    showMessageBox('Connection Test', `Connection test failed. vMix responded with status ${response.status}. Please check your vMix IP and port settings.`, 'error');
+                }
             }).catch(error => {
-                updateConnectionStatus(false);
-                console.error('vMix connection failed:', error);
-                // Replaced alert with custom notification
-                showNotification(`Failed to connect to vMix at ${controller.vmixIP}:${controller.vmixPort}\nPlease check:\n- vMix is running\n- Web Controller is enabled in vMix\n- IP address and port are correct`, false);
+                // If CORS fails, try no-cors. For testing, a successful no-cors fetch still means something got sent.
+                fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                }).then(() => {
+                    updateConnectionStatus(true); // Assume success if no-cors doesn't error
+                    updateDebugInfo('⚠️ Connection test sent (no-cors fallback)', 'N/A', url);
+                    // Use a custom message box instead of alert
+                    showMessageBox('Connection Test', 'Connection test sent via no-cors mode. Check vMix for confirmation. (Cannot verify direct response)', 'warning');
+                }).catch(e => {
+                    updateConnectionStatus(false);
+                    updateDebugInfo('❌ Connection test failed completely', 'N/A', url);
+                    console.error('vMix connection failed:', e);
+                    // Use a custom message box instead of alert
+                    showMessageBox('Connection Test', 'Connection failed completely. Please check your vMix IP and port settings and ensure vMix is running and accessible.', 'error');
+                });
             });
         }
 
-        // Custom Notification function (from index_vmix.html)
-        function showNotification(message, isSuccess) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: ${isSuccess ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'};
-                color: white;
-                padding: 16px 24px;
-                border-radius: 12px;
-                font-weight: 500;
-                z-index: 1000;
-                backdrop-filter: blur(10px);
-            `;
-            // Handle multiline messages for display in notification
-            notification.innerHTML = message.replace(/\n/g, '<br>');
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        // Update Connection Status (from 01.html and index_vmix.html)
         function updateConnectionStatus(connected) {
             const indicator = document.getElementById('statusIndicator');
             const text = document.getElementById('connectionText');
@@ -1256,15 +1284,12 @@
             if (connected) {
                 indicator.classList.add('connected');
                 text.textContent = 'vMix Connected';
-                controller.vmixConnected = true; // Update controller's internal status
             } else {
                 indicator.classList.remove('connected');
                 text.textContent = 'vMix Disconnected';
-                controller.vmixConnected = false; // Update controller's internal status
             }
         }
 
-        // Reset to Defaults (from index_vmix.html)
         function resetToDefaults() {
             const defaultScheme = colorSchemes[0];
             controller.applyColorScheme(defaultScheme);
@@ -1278,16 +1303,12 @@
             controller.updateDuration(40);
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
-            
-            // Ensure controller's internal values are also reset
-            controller.vmixIP = '127.0.0.1'; 
+            controller.vmixIP = '127.0.0.1';
             controller.vmixPort = 8088;
-            controller.micInput = 'Mic1'; // Changed from micInputName to micInput
-
+            controller.micInput = 'Mic1';
             controller.saveSettings();
         }
 
-        // Export Settings (from index_vmix.html)
         function exportSettings() {
             const settings = window.timerSettings || {};
             const dataStr = JSON.stringify(settings, null, 2);
@@ -1300,7 +1321,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // Import Settings (from index_vmix.html)
         function importSettings() {
             const fileInput = document.getElementById('importFile');
             fileInput.onchange = (e) => {
@@ -1313,9 +1333,9 @@
                         const settings = JSON.parse(e.target.result);
                         window.timerSettings = settings;
                         controller.loadSettings();
-                        showNotification('Settings imported successfully!', true); 
+                        showMessageBox('Import Settings', 'Settings imported successfully!', 'success');
                     } catch (error) {
-                        showNotification('Failed to import settings. Please check the file format.', false); 
+                        showMessageBox('Import Settings', 'Failed to import settings. Please check the file format.', 'error');
                     }
                 };
                 reader.readAsText(file);
@@ -1323,20 +1343,109 @@
             fileInput.click();
         }
 
-        // Close settings panel when clicking outside (from 01.html and index_vmix.html)
+        // Custom message box functions (replaces alert and confirm)
+        function showMessageBox(title, message, type = 'info') {
+            const messageBoxContainer = document.createElement('div');
+            messageBoxContainer.id = 'messageBoxContainer';
+            messageBoxContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+            `;
+
+            const messageBox = document.createElement('div');
+            messageBox.style.cssText = `
+                background: rgba(0, 0, 0, 0.8);
+                backdrop-filter: blur(15px);
+                border-radius: 12px;
+                padding: 30px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+                color: white;
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+                transform: translateY(-20px);
+                transition: transform 0.3s ease-in-out;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            `;
+
+            const titleElem = document.createElement('h3');
+            titleElem.textContent = title;
+            titleElem.style.cssText = `
+                margin-bottom: 15px;
+                font-size: 1.4rem;
+                color: var(--text-color);
+            `;
+
+            const messageElem = document.createElement('p');
+            messageElem.textContent = message;
+            messageElem.style.cssText = `
+                margin-bottom: 25px;
+                font-size: 1.1rem;
+                line-height: 1.5;
+                color: rgba(255, 255, 255, 0.9);
+            `;
+
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'OK';
+            closeButton.className = 'btn'; // Reuse existing button style
+            
+            // Add type-specific styling
+            if (type === 'success') {
+                closeButton.classList.add('btn-primary');
+            } else if (type === 'error') {
+                closeButton.classList.add('btn-danger');
+            } else if (type === 'warning') {
+                closeButton.classList.add('btn-warning');
+            } else {
+                closeButton.classList.add('btn-secondary');
+            }
+
+
+            closeButton.onclick = () => {
+                messageBoxContainer.style.opacity = '0';
+                messageBox.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    document.body.removeChild(messageBoxContainer);
+                }, 300); // Match transition duration
+            };
+
+            messageBox.appendChild(titleElem);
+            messageBox.appendChild(messageElem);
+            messageBox.appendChild(closeButton);
+            messageBoxContainer.appendChild(messageBox);
+            document.body.appendChild(messageBoxContainer);
+
+            // Animate in
+            setTimeout(() => {
+                messageBoxContainer.style.opacity = '1';
+                messageBox.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('settingsPanel');
             const toggle = document.querySelector('.settings-toggle');
             
-            if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+            if (panel && toggle && !panel.contains(e.target) && !toggle.contains(e.target)) {
                 panel.classList.remove('active');
             }
         });
 
-        // Initialize connection status (will be updated by controller.checkVMixConnection on init)
+        // Initialize connection status
         updateConnectionStatus(false);
 
-        // Auto-save settings periodically (from index_vmix.html)
+        // Auto-save settings periodically
         setInterval(() => {
             controller.saveSettings();
         }, 30000); // Save every 30 seconds
