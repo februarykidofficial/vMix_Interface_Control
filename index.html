@@ -281,7 +281,7 @@
         .btn-danger {
             background: linear-gradient(135deg, var(--danger-color), #dc2626);
             color: white;
-            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 88px 24px rgba(239, 68, 68, 0.3);
         }
 
         .btn:disabled {
@@ -1070,8 +1070,9 @@
                     return false;
                 }
                 try {
-                    // Construct the command URL for vMix API
-                    const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${encodeURIComponent(command)}`;
+                    // Corrected: Removed encodeURIComponent from the entire command string
+                    // vMix expects Function=AudioOn&Input=Mic1 not Function=AudioOn%26Input%3DMic1
+                    const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`;
                     const response = await fetch(url);
                     if (!response.ok) {
                         console.error(`Failed to send vMix command: ${command}, Status: ${response.status}`);
@@ -1093,11 +1094,11 @@
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    this.sendVMixCommand(`AudioOn&Input=${this.micInput}`); // Changed command format
+                    this.sendVMixCommand(`AudioOn&Input=${this.micInput}`); 
                 } else {
                     micStatus.className = 'mic-status mic-muted';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    this.sendVMixCommand(`AudioOff&Input=${this.micInput}`); // Changed command format
+                    this.sendVMixCommand(`AudioOff&Input=${this.micInput}`); 
                 }
             }
             // --- End vMix Connection Logic ---
@@ -1196,7 +1197,8 @@
         // Modified connectToVMix to only update controller settings and then check connection
         function connectToVMix() {
             controller.vmixIP = document.getElementById('vmixIP').value;
-            controller.vmixPort = document.getElementById('vmixPort').value;
+            // Ensure vmixPort is parsed as an integer for consistency
+            controller.vmixPort = parseInt(document.getElementById('vmixPort').value); 
             controller.micInput = document.getElementById('micInput').value;
             controller.saveSettings(); // Save updated IP, Port, MicInput
             controller.checkVMixConnection(); // Check connection with new settings
