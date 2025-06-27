@@ -799,7 +799,7 @@
                 this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
-                this.micInputName = 'Mic1'; // Renamed to match original version
+                this.micInputName = 'Mic1'; 
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
                 this.isConnected = false; 
@@ -809,12 +809,12 @@
 
             init() {
                 this.setupEventListeners();
-                this.loadSettings();
+                this.loadSettings(); // Load settings first so vmixIP/Port are updated
                 this.updateDisplay();
                 this.renderColorSchemes();
                 this.setupTimerStyles();
-                // Initial connection attempt when the page loads
-                this.connectToVMix(); // Call the exact method from original version
+                // Initial connection attempt when the page loads, using loaded settings
+                this.connectToVMix(); 
             }
 
             setupEventListeners() {
@@ -828,6 +828,20 @@
                 timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
                 timerStyle.addEventListener('change', (e) => this.updateTimerStyle(e.target.value));
                 
+                // Add event listeners for vMix connection settings input fields
+                document.getElementById('vmixIP').addEventListener('change', (e) => {
+                    this.vmixIP = e.target.value;
+                    this.saveSettings(); // Save immediately on change
+                });
+                document.getElementById('vmixPort').addEventListener('change', (e) => {
+                    this.vmixPort = parseInt(e.target.value);
+                    this.saveSettings(); // Save immediately on change
+                });
+                document.getElementById('micInput').addEventListener('change', (e) => {
+                    this.micInputName = e.target.value;
+                    this.saveSettings(); // Save immediately on change
+                });
+
                 // Color inputs
                 const colorInputs = ['primaryColor', 'secondaryColor', 'accentColor', 'warningColor', 'dangerColor'];
                 colorInputs.forEach(id => {
@@ -1112,7 +1126,7 @@
                     duration: this.duration,
                     vmixIP: this.vmixIP,
                     vmixPort: this.vmixPort,
-                    micInputName: this.micInputName, // Changed from micInput to micInputName for consistency
+                    micInputName: this.micInputName, 
                     timerScale: document.documentElement.style.getPropertyValue('--timer-scale') || '1',
                     timerStyle: this.currentStyle,
                     colors: {
@@ -1141,14 +1155,14 @@
                 if (settings.duration) this.duration = settings.duration;
                 if (settings.vmixIP) this.vmixIP = settings.vmixIP;
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
-                if (settings.micInputName) this.micInputName = settings.micInputName; // Changed from micInput to micInputName for consistency
+                if (settings.micInputName) this.micInputName = settings.micInputName; 
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
                 
                 // Update UI elements
                 document.getElementById('timerDuration').value = this.duration / (60 * 1000);
                 document.getElementById('vmixIP').value = this.vmixIP;
                 document.getElementById('vmixPort').value = this.vmixPort;
-                document.getElementById('micInput').value = this.micInputName; // Updated UI field
+                document.getElementById('micInput').value = this.micInputName; 
                 document.getElementById('timerStyle').value = this.currentStyle;
                 
                 if (settings.timerScale) {
@@ -1203,7 +1217,7 @@
             controller.vmixIP = document.getElementById('vmixIP').value;
             // Ensure vmixPort is parsed as an integer for consistency
             controller.vmixPort = parseInt(document.getElementById('vmixPort').value); 
-            controller.micInputName = document.getElementById('micInput').value; // Updated to micInputName
+            controller.micInputName = document.getElementById('micInput').value; 
             controller.saveSettings(); // Save updated IP, Port, MicInput
             controller.connectToVMix(); // Call the internal method
         }
@@ -1269,7 +1283,7 @@
             controller.updateTimerStyle('modern');
             controller.vmixIP = '127.0.0.1';
             controller.vmixPort = 8088;
-            controller.micInputName = 'Mic1'; // Updated
+            controller.micInputName = 'Mic1'; 
             controller.saveSettings();
         }
 
