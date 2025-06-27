@@ -821,7 +821,7 @@
                 // Initial connection attempt when the page loads, using loaded settings
                 // The actual connection logic is handled by the global `connectToVMix`
                 // which explicitly reads values from input fields for robustness.
-                connectToVMix(); 
+                connectToVMix(); // Call the global connectToVMix on load
             }
 
             setupEventListeners() {
@@ -835,10 +835,6 @@
                 timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
                 timerStyle.addEventListener('change', (e) => this.updateTimerStyle(e.target.value));
                 
-                // No direct change listeners for vMix IP/Port/MicInput here.
-                // These are handled by the global `connectToVMix` function when button is clicked.
-                // This preserves the `01.html` behavior for explicit connection.
-
                 // Color inputs
                 const colorInputs = ['primaryColor', 'secondaryColor', 'accentColor', 'warningColor', 'dangerColor'];
                 colorInputs.forEach(id => {
@@ -1058,9 +1054,10 @@
                 }, 3000);
             }
 
-            // --- vMix Connection Logic (from 01.html) ---
-            async connectToVMixInternal() { // Renamed to avoid clash with global function
+            // --- vMix Connection Logic (from 01.html, now integrated directly into the class) ---
+            async connectToVMix() { 
                 try {
+                    // Update connection status immediately based on values stored in this instance
                     const response = await fetch(`http://${this.vmixIP}:${this.vmixPort}/api/`);
                     
                     if (response.ok) {
@@ -1073,6 +1070,15 @@
                     this.isConnected = false;
                     updateConnectionStatus(false);
                     console.error('vMix connection error:', error);
+                }
+            }
+
+            async testConnection() { // New method directly on the controller
+                await this.connectToVMix(); // Use the internal connect method
+                if (this.isConnected) {
+                    showNotification('Connection successful!', true); 
+                } else {
+                    showNotification('Connection failed. Please check your settings.', false);
                 }
             }
 
@@ -1207,28 +1213,27 @@
             panel.classList.toggle('active');
         }
 
-        // Global functions for settings, using the 01.html method for robustness
+        // Global functions for settings, now strictly following 01.html's pattern
         function connectToVMix() {
-            // Explicitly update controller properties from UI fields before connecting
+            // 1. Accept and save manually provided settings
             controller.vmixIP = document.getElementById('vmixIP').value;
             controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
             controller.micInputName = document.getElementById('micInput').value;
-            controller.saveSettings(); // Save updated IP, Port, MicInput
-            controller.connectToVMixInternal(); // Call the internal method in the class
+            controller.saveSettings(); // Save updated properties
+
+            // 2. Try to connect with vMix using these updated settings
+            controller.connectToVMix(); 
         }
 
         async function testConnection() {
-            // Explicitly update controller properties from UI fields before testing
+            // Accept and save manually provided settings
             controller.vmixIP = document.getElementById('vmixIP').value;
             controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
             controller.micInputName = document.getElementById('micInput').value;
-            controller.saveSettings(); // Save updated IP, Port, MicInput
-            await controller.connectToVMixInternal(); // Call the internal method
-            if (controller.isConnected) {
-                showNotification('Connection successful!', true); 
-            } else {
-                showNotification('Connection failed. Please check your settings.', false);
-            }
+            controller.saveSettings(); // Save updated properties
+
+            // Try to connect with vMix using these updated settings and then show notification
+            await controller.testConnection(); // Calls the controller's testConnection method
         }
 
         // Custom Notification function (from index_vmix.html)
@@ -1283,9 +1288,12 @@
             controller.updateDuration(40);
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
-            controller.vmixIP = '127.0.0.1'; // Ensure controller's internal values are also reset
+            
+            // Ensure controller's internal values are also reset
+            controller.vmixIP = '127.0.0.1'; 
             controller.vmixPort = 8088;
             controller.micInputName = 'Mic1'; 
+
             controller.saveSettings();
         }
 
