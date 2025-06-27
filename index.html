@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speaker Timer Controller</title>
     <style>
+        :root {
+            --primary-color: #F05F57;
+            --secondary-color: #360940;
+            --accent-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-color: #ffffff;
+            --glass-bg: rgba(8, 6, 7, 0.4);
+            --timer-scale: 1;
+            --timer-style: 'modern';
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,8 +25,8 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #F05F57 0%, #360940 100%);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: var(--text-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -56,54 +68,61 @@
         }
 
         .main-panel {
-            background: rgba(8, 6, 7, 0.4);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
             border-radius: 32px;
-            padding: 60px;
+            padding: calc(60px * var(--timer-scale));
             border: 1px solid rgba(255, 255, 255, 0.18);
             box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
+            max-width: calc(600px * var(--timer-scale));
             width: 100%;
             text-align: center;
             position: relative;
             z-index: 1;
-        }
-
-        .speaker-title {
-            font-size: 2.2rem;
-            font-weight: 300;
-            margin-bottom: 40px;
-            opacity: 0.9;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            transform: scale(var(--timer-scale));
+            transform-origin: center;
         }
 
         .timer-container {
-            margin: 50px 0;
+            margin: calc(50px * var(--timer-scale)) 0;
             position: relative;
         }
 
         .timer-display {
-            font-size: 5.5rem;
+            font-size: calc(5.5rem * var(--timer-scale));
             font-weight: 200;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            margin: 40px 0;
-            letter-spacing: 6px;
+            font-family: var(--timer-style) == 'retro' ? 'SF Mono' : 'Inter', Monaco, 'Cascadia Code', monospace;
+            margin: calc(40px * var(--timer-scale)) 0;
+            letter-spacing: calc(6px * var(--timer-scale));
             position: relative;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: calc(8px * var(--timer-scale));
+        }
+
+        .timer-main {
+            font-size: calc(5.5rem * var(--timer-scale));
+        }
+
+        .timer-ms {
+            font-size: calc(2.2rem * var(--timer-scale));
+            opacity: 0.7;
+            font-weight: 300;
         }
 
         .timer-running {
-            color: #10b981;
+            color: var(--accent-color);
             text-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
         }
 
         .timer-paused {
-            color: #f59e0b;
+            color: var(--warning-color);
             text-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
         }
 
         .timer-expired {
-            color: #ef4444;
+            color: var(--danger-color);
             text-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
             animation: pulse-red 2s infinite;
         }
@@ -115,46 +134,60 @@
 
         .progress-container {
             width: 100%;
-            height: 8px;
+            height: calc(8px * var(--timer-scale));
             background: rgba(255, 255, 255, 0.15);
-            border-radius: 4px;
-            margin: 30px 0;
-            overflow: hidden;
+            border-radius: calc(4px * var(--timer-scale));
+            margin: calc(30px * var(--timer-scale)) 0;
+            overflow: visible;
             position: relative;
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #10b981, #059669);
-            border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent-color), #059669);
+            border-radius: calc(4px * var(--timer-scale));
             transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            position: relative;
+        }
+
+        .progress-pointer {
+            position: absolute;
+            right: calc(-6px * var(--timer-scale));
+            top: 50%;
+            transform: translateY(-50%);
+            width: calc(12px * var(--timer-scale));
+            height: calc(12px * var(--timer-scale));
+            background: var(--text-color);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+            transition: right 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .control-section {
-            margin: 40px 0;
+            margin: calc(40px * var(--timer-scale)) 0;
         }
 
         .control-buttons {
             display: flex;
-            gap: 20px;
+            gap: calc(20px * var(--timer-scale));
             justify-content: center;
-            margin-bottom: 30px;
+            margin-bottom: calc(30px * var(--timer-scale));
         }
 
         .btn {
-            padding: 18px 36px;
+            padding: calc(18px * var(--timer-scale)) calc(36px * var(--timer-scale));
             border: none;
-            border-radius: 16px;
-            font-size: 1.1rem;
+            border-radius: calc(16px * var(--timer-scale));
+            font-size: calc(1.1rem * var(--timer-scale));
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: calc(1px * var(--timer-scale));
             position: relative;
             overflow: hidden;
-            min-width: 140px;
+            min-width: calc(140px * var(--timer-scale));
         }
 
         .btn:before {
@@ -182,13 +215,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, var(--accent-color), #059669);
             color: white;
             box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
             color: white;
             box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
         }
@@ -197,6 +230,12 @@
             background: linear-gradient(135deg, #6b7280, #4b5563);
             color: white;
             box-shadow: 0 8px 24px rgba(107, 114, 128, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
         }
 
         .btn:disabled {
@@ -214,45 +253,50 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            font-size: 1.1rem;
+            gap: calc(12px * var(--timer-scale));
+            font-size: calc(1.1rem * var(--timer-scale));
             font-weight: 500;
-            margin: 30px 0;
-            padding: 16px 24px;
-            border-radius: 12px;
+            margin: calc(30px * var(--timer-scale)) 0;
+            padding: calc(16px * var(--timer-scale)) calc(24px * var(--timer-scale));
+            border-radius: calc(12px * var(--timer-scale));
             backdrop-filter: blur(10px);
         }
 
         .mic-live {
             background: rgba(16, 185, 129, 0.2);
             border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #10b981;
+            color: var(--accent-color);
         }
 
         .mic-muted {
             background: rgba(239, 68, 68, 0.2);
             border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
+            color: var(--danger-color);
         }
 
         .mic-indicator {
-            width: 12px;
-            height: 12px;
+            width: calc(12px * var(--timer-scale));
+            height: calc(12px * var(--timer-scale));
             border-radius: 50%;
             background: currentColor;
             box-shadow: 0 0 12px currentColor;
         }
 
-        .connection-panel {
+        .top-controls {
             position: fixed;
             top: 30px;
             right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .connection-panel {
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(15px);
             border-radius: 12px;
             padding: 16px 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
         }
 
         .connection-status {
@@ -267,19 +311,16 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #ef4444;
-            box-shadow: 0 0 8px #ef4444;
+            background: var(--danger-color);
+            box-shadow: 0 0 8px var(--danger-color);
         }
 
         .status-indicator.connected {
-            background: #10b981;
-            box-shadow: 0 0 8px #10b981;
+            background: var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
         }
 
         .settings-toggle {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
@@ -291,7 +332,6 @@
             cursor: pointer;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
-            z-index: 100;
         }
 
         .settings-toggle:hover {
@@ -299,16 +339,39 @@
             transform: rotate(90deg);
         }
 
+        .reset-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            color: var(--danger-color);
+        }
+
+        .reset-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.05);
+        }
+
         .settings-panel {
             position: fixed;
-            bottom: 100px;
+            top: 100px;
             right: 30px;
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
             border-radius: 16px;
             padding: 24px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            min-width: 320px;
+            min-width: 400px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
             transform: translateY(20px);
             opacity: 0;
             visibility: hidden;
@@ -323,10 +386,23 @@
         }
 
         .settings-title {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 20px;
-            color: #ffffff;
+            color: var(--text-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .settings-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .settings-row {
@@ -341,20 +417,20 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
-        .settings-row input {
+        .settings-row input, .settings-row select {
             width: 100%;
             padding: 12px 16px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
+            color: var(--text-color);
             font-size: 0.9rem;
             transition: all 0.3s ease;
         }
 
-        .settings-row input:focus {
+        .settings-row input:focus, .settings-row select:focus {
             outline: none;
-            border-color: #10b981;
+            border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
@@ -362,10 +438,16 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        .color-input {
+            height: 50px !important;
+            cursor: pointer;
+        }
+
         .settings-buttons {
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .btn-small {
@@ -374,19 +456,54 @@
             min-width: auto;
         }
 
+        .version-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+        }
+
+        .range-input {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .range-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .range-input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
         @media (max-width: 768px) {
             .main-panel {
-                padding: 40px 30px;
+                padding: calc(40px * var(--timer-scale));
                 margin: 20px;
             }
 
             .timer-display {
-                font-size: 4rem;
-                letter-spacing: 3px;
-            }
-
-            .speaker-title {
-                font-size: 1.8rem;
+                font-size: calc(4rem * var(--timer-scale));
+                letter-spacing: calc(3px * var(--timer-scale));
             }
 
             .control-buttons {
@@ -399,17 +516,17 @@
                 max-width: 200px;
             }
 
-            .connection-panel,
-            .settings-toggle,
-            .settings-panel {
+            .top-controls {
                 position: absolute;
+                flex-direction: column;
             }
 
             .settings-panel {
                 right: 10px;
                 left: 10px;
-                bottom: 80px;
+                top: 120px;
                 min-width: auto;
+                max-width: none;
             }
         }
     </style>
@@ -417,30 +534,48 @@
 <body>
     <div class="background-decoration"></div>
     
-    <div class="connection-panel">
-        <div class="connection-status">
-            <div id="statusIndicator" class="status-indicator"></div>
-            <span id="connectionText">vMix Connection</span>
+    <div class="top-controls">
+        <div class="connection-panel">
+            <div class="connection-status">
+                <div id="statusIndicator" class="status-indicator"></div>
+                <span id="connectionText">vMix Connection</span>
+            </div>
+        </div>
+        
+        <div class="reset-btn" onclick="controller.resetTimer()" title="Reset Timer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+            </svg>
+        </div>
+        
+        <div class="settings-toggle" onclick="toggleSettings()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+            </svg>
         </div>
     </div>
 
     <div class="container">
         <div class="main-panel">
-            <h1 class="speaker-title"></h1>
-            
             <div class="timer-container">
-                <div id="timerDisplay" class="timer-display">40:00</div>
+                <div id="timerDisplay" class="timer-display">
+                    <span class="timer-main">40:00</span>
+                    <span class="timer-ms">.000</span>
+                </div>
                 
                 <div class="progress-container">
-                    <div id="progressBar" class="progress-bar" style="width: 100%"></div>
+                    <div id="progressBar" class="progress-bar" style="width: 100%">
+                        <div class="progress-pointer"></div>
+                    </div>
                 </div>
             </div>
             
             <div class="control-section">
                 <div class="control-buttons">
-                    <button id="startBtn" class="btn btn-primary">Start</button>
-                    <button id="pauseBtn" class="btn btn-warning" disabled>Pause</button>
-                    <button id="resetBtn" class="btn btn-secondary">Reset</button>
+                    <button id="mainBtn" class="btn btn-primary">Start</button>
                 </div>
                 
                 <div id="micStatus" class="mic-status mic-muted">
@@ -451,36 +586,92 @@
         </div>
     </div>
 
-    <div class="settings-toggle" onclick="toggleSettings()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
-        </svg>
-    </div>
-
     <div id="settingsPanel" class="settings-panel">
-        <div class="settings-title">Connection Settings</div>
+        <div class="settings-title">Settings</div>
         
-        <div class="settings-row">
-            <label>vMix IP Address</label>
-            <input type="text" id="vmixIP" value="127.0.0.1" placeholder="192.168.1.100">
+        <div class="settings-section">
+            <h3>Connection</h3>
+            <div class="settings-row">
+                <label>vMix IP Address</label>
+                <input type="text" id="vmixIP" value="127.0.0.1" placeholder="192.168.1.100">
+            </div>
+            
+            <div class="settings-row">
+                <label>vMix Port</label>
+                <input type="number" id="vmixPort" value="8088" placeholder="8088">
+            </div>
+            
+            <div class="settings-row">
+                <label>Microphone Input Name</label>
+                <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
+            </div>
         </div>
-        
-        <div class="settings-row">
-            <label>vMix Port</label>
-            <input type="number" id="vmixPort" value="8088" placeholder="8088">
+
+        <div class="settings-section">
+            <h3>Timer Settings</h3>
+            <div class="settings-row">
+                <label>Timer Duration (minutes)</label>
+                <input type="number" id="timerDuration" value="40" min="1" max="180">
+            </div>
+            
+            <div class="settings-row">
+                <label>Timer Scale</label>
+                <input type="range" id="timerScale" class="range-input" min="0.5" max="2" step="0.1" value="1">
+                <span id="scaleValue">1.0x</span>
+            </div>
+            
+            <div class="settings-row">
+                <label>Timer Style</label>
+                <select id="timerStyle">
+                    <option value="modern">Modern</option>
+                    <option value="retro">Retro</option>
+                    <option value="minimal">Minimal</option>
+                </select>
+            </div>
         </div>
-        
-        <div class="settings-row">
-            <label>Microphone Input Name</label>
-            <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
+
+        <div class="settings-section">
+            <h3>Colors</h3>
+            <div class="settings-row">
+                <label>Primary Color</label>
+                <input type="color" id="primaryColor" class="color-input" value="#F05F57">
+            </div>
+            
+            <div class="settings-row">
+                <label>Secondary Color</label>
+                <input type="color" id="secondaryColor" class="color-input" value="#360940">
+            </div>
+            
+            <div class="settings-row">
+                <label>Accent Color</label>
+                <input type="color" id="accentColor" class="color-input" value="#10b981">
+            </div>
+            
+            <div class="settings-row">
+                <label>Warning Color</label>
+                <input type="color" id="warningColor" class="color-input" value="#f59e0b">
+            </div>
+            
+            <div class="settings-row">
+                <label>Danger Color</label>
+                <input type="color" id="dangerColor" class="color-input" value="#ef4444">
+            </div>
         </div>
         
         <div class="settings-buttons">
             <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
             <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
+            <button class="btn btn-warning btn-small" onclick="resetToDefaults()">Reset to Defaults</button>
+            <button class="btn btn-secondary btn-small" onclick="exportSettings()">Export Settings</button>
+            <button class="btn btn-secondary btn-small" onclick="importSettings()">Import Settings</button>
         </div>
     </div>
+
+    <div class="version-info">
+        build v0.2a (alpha) by FebruaryKid
+    </div>
+
+    <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script>
         class SpeakerController {
@@ -489,36 +680,108 @@
                 this.vmixPort = 8088;
                 this.micInputName = 'Mic1';
                 this.isConnected = false;
+                this.timerDuration = 40; // minutes
                 
                 // Timer state
                 this.timer = {
-                    time: 40 * 60, // 40 minutes in seconds
+                    time: this.timerDuration * 60 * 1000, // milliseconds
                     isRunning: false,
-                    interval: null
+                    interval: null,
+                    startTime: null
                 };
                 
                 // Microphone state
                 this.micState = false; // false = muted, true = live
                 
                 this.initializeEventListeners();
+                this.loadSettings();
                 this.updateDisplay();
                 this.connectToVMix();
             }
 
             initializeEventListeners() {
-                document.getElementById('startBtn').addEventListener('click', () => this.startTimer());
-                document.getElementById('pauseBtn').addEventListener('click', () => this.pauseTimer());
-                document.getElementById('resetBtn').addEventListener('click', () => this.resetTimer());
+                document.getElementById('mainBtn').addEventListener('click', () => this.toggleTimer());
 
+                // Settings inputs
                 document.getElementById('vmixIP').addEventListener('change', (e) => {
                     this.vmixIP = e.target.value;
+                    this.saveSettings();
                 });
                 document.getElementById('vmixPort').addEventListener('change', (e) => {
                     this.vmixPort = parseInt(e.target.value);
+                    this.saveSettings();
                 });
                 document.getElementById('micInput').addEventListener('change', (e) => {
                     this.micInputName = e.target.value;
+                    this.saveSettings();
                 });
+                document.getElementById('timerDuration').addEventListener('change', (e) => {
+                    this.timerDuration = parseInt(e.target.value);
+                    this.resetTimer();
+                    this.saveSettings();
+                });
+
+                // Color inputs
+                document.getElementById('primaryColor').addEventListener('change', (e) => {
+                    document.documentElement.style.setProperty('--primary-color', e.target.value);
+                    this.saveSettings();
+                });
+                document.getElementById('secondaryColor').addEventListener('change', (e) => {
+                    document.documentElement.style.setProperty('--secondary-color', e.target.value);
+                    this.saveSettings();
+                });
+                document.getElementById('accentColor').addEventListener('change', (e) => {
+                    document.documentElement.style.setProperty('--accent-color', e.target.value);
+                    this.saveSettings();
+                });
+                document.getElementById('warningColor').addEventListener('change', (e) => {
+                    document.documentElement.style.setProperty('--warning-color', e.target.value);
+                    this.saveSettings();
+                });
+                document.getElementById('dangerColor').addEventListener('change', (e) => {
+                    document.documentElement.style.setProperty('--danger-color', e.target.value);
+                    this.saveSettings();
+                });
+
+                // Timer scale
+                document.getElementById('timerScale').addEventListener('input', (e) => {
+                    const scale = parseFloat(e.target.value);
+                    document.documentElement.style.setProperty('--timer-scale', scale);
+                    document.getElementById('scaleValue').textContent = scale.toFixed(1) + 'x';
+                    this.saveSettings();
+                });
+
+                // Timer style
+                document.getElementById('timerStyle').addEventListener('change', (e) => {
+                    document.documentElement.style.setProperty('--timer-style', e.target.value);
+                    this.saveSettings();
+                });
+
+                // Import file
+                document.getElementById('importFile').addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const settings = JSON.parse(event.target.result);
+                                this.applySettings(settings);
+                                this.showNotification('Settings imported successfully!', true);
+                            } catch (error) {
+                                this.showNotification('Invalid settings file!', false);
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+            }
+
+            toggleTimer() {
+                if (this.timer.isRunning) {
+                    this.pauseTimer();
+                } else {
+                    this.startTimer();
+                }
             }
 
             async connectToVMix() {
@@ -543,7 +806,6 @@
                     'Connected to vMix successfully!' : 
                     'Failed to connect to vMix. Check settings.';
                 
-                // Simple notification
                 this.showNotification(message, this.isConnected);
             }
 
@@ -612,16 +874,19 @@
                 if (this.timer.isRunning) return;
 
                 this.timer.isRunning = true;
+                this.timer.startTime = Date.now() - (this.timerDuration * 60 * 1000 - this.timer.time);
                 this.setMicrophoneState(true);
 
                 this.timer.interval = setInterval(() => {
+                    const elapsed = Date.now() - this.timer.startTime;
+                    this.timer.time = Math.max(0, this.timerDuration * 60 * 1000 - elapsed);
+                    
                     if (this.timer.time > 0) {
-                        this.timer.time--;
                         this.updateDisplay();
                     } else {
                         this.timerExpired();
                     }
-                }, 1000);
+                }, 10); // Update every 10ms for smooth milliseconds
 
                 this.updateButtons();
             }
@@ -638,7 +903,7 @@
             resetTimer() {
                 this.timer.isRunning = false;
                 clearInterval(this.timer.interval);
-                this.timer.time = 40 * 60;
+                this.timer.time = this.timerDuration * 60 * 1000;
                 this.setMicrophoneState(false);
                 this.updateDisplay();
                 this.updateButtons();
@@ -647,52 +912,60 @@
             timerExpired() {
                 this.timer.isRunning = false;
                 clearInterval(this.timer.interval);
-                this.setMicrophoneState(false);
+                this.timer.time = 0;
+                this.setMicrophoneState(false); // Auto turn off microphone
+                this.updateDisplay();
                 this.updateButtons();
-                this.showNotification('Time expired!', false);
+                this.showNotification('Time expired! Microphone automatically muted.', false);
             }
 
             updateDisplay() {
-                const time = this.timer.time;
-                const minutes = Math.floor(time / 60);
-                const seconds = time % 60;
+                const totalMs = this.timer.time;
+                const totalSeconds = Math.floor(totalMs / 1000);
+                const milliseconds = totalMs % 1000;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                
                 const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                const msString = `.${milliseconds.toString().padStart(3, '0')}`;
 
+                const timerMain = document.querySelector('.timer-main');
+                const timerMs = document.querySelector('.timer-ms');
                 const timerElement = document.getElementById('timerDisplay');
-                timerElement.textContent = timeString;
+                
+                timerMain.textContent = timeString;
+                timerMs.textContent = msString;
 
                 // Update timer class based on state
                 timerElement.className = 'timer-display';
-                if (time === 0) {
+                if (totalMs === 0) {
                     timerElement.classList.add('timer-expired');
                 } else if (this.timer.isRunning) {
                     timerElement.classList.add('timer-running');
-                } else if (time < 40 * 60) {
+                } else if (totalMs < this.timerDuration * 60 * 1000) {
                     timerElement.classList.add('timer-paused');
                 }
 
                 // Update progress bar
-                const totalTime = 40 * 60;
-                const progressPercent = (time / totalTime) * 100;
+                const totalTime = this.timerDuration * 60 * 1000;
+                const progressPercent = (totalMs / totalTime) * 100;
                 document.getElementById('progressBar').style.width = `${progressPercent}%`;
             }
 
             updateButtons() {
-                const startBtn = document.getElementById('startBtn');
-                const pauseBtn = document.getElementById('pauseBtn');
+                const mainBtn = document.getElementById('mainBtn');
 
                 if (this.timer.isRunning) {
-                    startBtn.disabled = true;
-                    pauseBtn.disabled = false;
-                    startBtn.textContent = 'Running';
+                    mainBtn.textContent = 'Pause';
+                    mainBtn.className = 'btn btn-warning';
                 } else if (this.timer.time === 0) {
-                    startBtn.disabled = true;
-                    pauseBtn.disabled = true;
-                    startBtn.textContent = 'Expired';
+                    mainBtn.textContent = 'Expired';
+                    mainBtn.className = 'btn btn-danger';
+                    mainBtn.disabled = true;
                 } else {
-                    startBtn.disabled = false;
-                    pauseBtn.disabled = true;
-                    startBtn.textContent = this.timer.time === 40 * 60 ? 'Start' : 'Resume';
+                    mainBtn.textContent = this.timer.time === this.timerDuration * 60 * 1000 ? 'Start' : 'Resume';
+                    mainBtn.className = 'btn btn-primary';
+                    mainBtn.disabled = false;
                 }
             }
 
@@ -707,6 +980,86 @@
                     statusElement.className = 'mic-status mic-muted';
                     textElement.textContent = 'Microphone Muted';
                 }
+            }
+
+            saveSettings() {
+                const settings = {
+                    vmixIP: this.vmixIP,
+                    vmixPort: this.vmixPort,
+                    micInputName: this.micInputName,
+                    timerDuration: this.timerDuration,
+                    primaryColor: document.getElementById('primaryColor').value,
+                    secondaryColor: document.getElementById('secondaryColor').value,
+                    accentColor: document.getElementById('accentColor').value,
+                    warningColor: document.getElementById('warningColor').value,
+                    dangerColor: document.getElementById('dangerColor').value,
+                    timerScale: document.getElementById('timerScale').value,
+                    timerStyle: document.getElementById('timerStyle').value
+                };
+                
+                // Store in memory (localStorage not available)
+                this.currentSettings = settings;
+            }
+
+            loadSettings() {
+                // Default settings - would normally load from localStorage
+                const defaultSettings = {
+                    vmixIP: '127.0.0.1',
+                    vmixPort: 8088,
+                    micInputName: 'Mic1',
+                    timerDuration: 40,
+                    primaryColor: '#F05F57',
+                    secondaryColor: '#360940',
+                    accentColor: '#10b981',
+                    warningColor: '#f59e0b',
+                    dangerColor: '#ef4444',
+                    timerScale: '1',
+                    timerStyle: 'modern'
+                };
+
+                this.applySettings(this.currentSettings || defaultSettings);
+            }
+
+            applySettings(settings) {
+                // Apply connection settings
+                this.vmixIP = settings.vmixIP || '127.0.0.1';
+                this.vmixPort = settings.vmixPort || 8088;
+                this.micInputName = settings.micInputName || 'Mic1';
+                this.timerDuration = settings.timerDuration || 40;
+
+                // Update form inputs
+                document.getElementById('vmixIP').value = this.vmixIP;
+                document.getElementById('vmixPort').value = this.vmixPort;
+                document.getElementById('micInput').value = this.micInputName;
+                document.getElementById('timerDuration').value = this.timerDuration;
+
+                // Apply colors
+                document.getElementById('primaryColor').value = settings.primaryColor || '#F05F57';
+                document.getElementById('secondaryColor').value = settings.secondaryColor || '#360940';
+                document.getElementById('accentColor').value = settings.accentColor || '#10b981';
+                document.getElementById('warningColor').value = settings.warningColor || '#f59e0b';
+                document.getElementById('dangerColor').value = settings.dangerColor || '#ef4444';
+
+                // Apply CSS variables
+                document.documentElement.style.setProperty('--primary-color', settings.primaryColor || '#F05F57');
+                document.documentElement.style.setProperty('--secondary-color', settings.secondaryColor || '#360940');
+                document.documentElement.style.setProperty('--accent-color', settings.accentColor || '#10b981');
+                document.documentElement.style.setProperty('--warning-color', settings.warningColor || '#f59e0b');
+                document.documentElement.style.setProperty('--danger-color', settings.dangerColor || '#ef4444');
+
+                // Apply scale
+                const scale = settings.timerScale || '1';
+                document.getElementById('timerScale').value = scale;
+                document.getElementById('scaleValue').textContent = parseFloat(scale).toFixed(1) + 'x';
+                document.documentElement.style.setProperty('--timer-scale', scale);
+
+                // Apply style
+                document.getElementById('timerStyle').value = settings.timerStyle || 'modern';
+                document.documentElement.style.setProperty('--timer-style', settings.timerStyle || 'modern');
+
+                // Reset timer with new duration
+                this.resetTimer();
+                this.saveSettings();
             }
         }
 
@@ -726,6 +1079,44 @@
 
         function testConnection() {
             controller.testConnection();
+        }
+
+        function resetToDefaults() {
+            const defaultSettings = {
+                vmixIP: '127.0.0.1',
+                vmixPort: 8088,
+                micInputName: 'Mic1',
+                timerDuration: 40,
+                primaryColor: '#F05F57',
+                secondaryColor: '#360940',
+                accentColor: '#10b981',
+                warningColor: '#f59e0b',
+                dangerColor: '#ef4444',
+                timerScale: '1',
+                timerStyle: 'modern'
+            };
+
+            controller.applySettings(defaultSettings);
+            controller.showNotification('Settings reset to defaults!', true);
+        }
+
+        function exportSettings() {
+            const settings = controller.currentSettings || {};
+            const dataStr = JSON.stringify(settings, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'speaker-timer-settings.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            controller.showNotification('Settings exported successfully!', true);
+        }
+
+        function importSettings() {
+            document.getElementById('importFile').click();
         }
 
         // Initialize controller
