@@ -333,12 +333,11 @@
             top: 30px;
             right: 30px;
             display: flex;
-            flex-direction: column; /* Changed to column for stacking panels */
             gap: 15px;
             z-index: 100;
         }
 
-        .connection-panel-top { /* New class for the top-right connection panel */
+        .connection-panel {
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(15px);
             border-radius: 12px;
@@ -366,25 +365,6 @@
             background: var(--accent-color);
             box-shadow: 0 0 8px var(--accent-color);
         }
-        
-        .debug-info {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 8px;
-            padding: 10px 15px;
-            margin-top: 10px;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.7);
-            text-align: left;
-            word-break: break-all;
-            max-width: 300px; /* Adjust as needed */
-        }
-        .debug-info p {
-            margin: 5px 0;
-        }
-        .debug-info strong {
-            color: rgba(255, 255, 255, 0.9);
-        }
 
         .settings-toggle {
             background: rgba(255, 255, 255, 0.1);
@@ -398,7 +378,6 @@
             cursor: pointer;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
-            /* position: fixed; moved to top-controls for stacking */
         }
 
         .settings-toggle:hover {
@@ -419,7 +398,6 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             color: var(--danger-color);
-            /* position: fixed; moved to top-controls for stacking */
         }
 
         .reset-btn:hover {
@@ -427,36 +405,9 @@
             transform: scale(1.05);
         }
 
-        /* New panel for connection settings */
-        #connectionSettingsPanel {
+        .settings-panel {
             position: fixed;
-            top: 100px; /* Below the connection status */
-            right: 30px;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            min-width: 400px;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            transform: translateY(20px);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 99;
-        }
-        #connectionSettingsPanel.active {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Existing settings panel for general/display settings */
-        #displaySettingsPanel {
-            position: fixed;
-            bottom: 100px; /* Moved to bottom right */
+            top: 100px;
             right: 30px;
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
@@ -474,12 +425,11 @@
             z-index: 99;
         }
 
-        #displaySettingsPanel.active {
+        .settings-panel.active {
             transform: translateY(0);
             opacity: 1;
             visibility: visible;
         }
-
 
         .settings-title {
             font-size: 1.2rem;
@@ -618,6 +568,42 @@
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
+        /* Lock button styles */
+        .lock-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .lock-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .lock-button.locked {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+            box-shadow: 0 0 10px var(--danger-color);
+        }
+
+        .locked-disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            pointer-events: none; /* Disable all mouse events */
+        }
+
         @media (max-width: 768px) {
             .main-panel {
                 padding: calc(40px * var(--timer-scale));
@@ -647,24 +633,25 @@
             .top-controls {
                 position: absolute;
                 flex-direction: column;
+                top: 10px;
+                right: 10px;
             }
 
-            #connectionSettingsPanel,
-            #displaySettingsPanel {
+            .settings-panel {
                 right: 10px;
                 left: 10px;
+                top: 120px;
                 min-width: auto;
                 max-width: none;
-            }
-            #connectionSettingsPanel {
-                 top: 120px;
-            }
-            #displaySettingsPanel {
-                bottom: 80px;
             }
 
             .color-schemes {
                 grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            }
+
+            .lock-button {
+                bottom: 10px;
+                right: 10px;
             }
         }
     </style>
@@ -673,19 +660,14 @@
     <div class="background-decoration"></div>
     
     <div class="top-controls">
-        <div class="connection-panel-top">
+        <div class="connection-panel">
             <div class="connection-status">
                 <div id="statusIndicator" class="status-indicator"></div>
                 <span id="connectionText">vMix Connection</span>
             </div>
-            <div id="debugInfo" class="debug-info" style="display: none;">
-                <p><strong>Status:</strong> <span id="debugStatus">Idle</span></p>
-                <p><strong>Command:</strong> <span id="debugCommand">N/A</span></p>
-                <p><strong>URL:</strong> <span id="debugUrl">N/A</span></p>
-            </div>
         </div>
         
-        <div class="reset-btn" onclick="controller.resetTimer()" title="Reset Timer">
+        <div id="resetBtn" class="reset-btn" onclick="controller.resetTimer()" title="Reset Timer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="23 4 23 10 17 10"></polyline>
                 <polyline points="1 20 1 14 7 14"></polyline>
@@ -693,12 +675,7 @@
             </svg>
         </div>
         
-        <div class="settings-toggle" onclick="toggleConnectionSettings()" title="Connection Settings">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-        </div>
-        <div class="settings-toggle" onclick="toggleDisplaySettings()" title="Display Settings">
+        <div id="settingsToggle" class="settings-toggle" onclick="toggleSettings()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
@@ -734,35 +711,27 @@
         </div>
     </div>
 
-    <!-- Connection Settings Panel -->
-    <div id="connectionSettingsPanel" class="settings-panel">
-        <div class="settings-title">Connection Settings</div>
+    <div id="settingsPanel" class="settings-panel">
+        <div class="settings-title">Settings</div>
         
-        <div class="settings-row">
-            <label>vMix IP Address</label>
-            <input type="text" id="vmixIP" value="127.0.0.1" placeholder="192.168.1.100">
+        <div class="settings-section">
+            <h3>Connection</h3>
+            <div class="settings-row">
+                <label>vMix IP Address</label>
+                <input type="text" id="vmixIP" value="127.0.0.1" placeholder="192.168.1.100">
+            </div>
+            
+            <div class="settings-row">
+                <label>vMix Port</label>
+                <input type="number" id="vmixPort" value="8088" placeholder="8088">
+            </div>
+            
+            <div class="settings-row">
+                <label>Microphone Input Name</label>
+                <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
+            </div>
         </div>
-        
-        <div class="settings-row">
-            <label>vMix Port</label>
-            <input type="number" id="vmixPort" value="8088" placeholder="8088">
-        </div>
-        
-        <div class="settings-row">
-            <label>Microphone Input Name</label>
-            <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
-        </div>
-        
-        <div class="settings-buttons">
-            <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
-            <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
-        </div>
-    </div>
 
-    <!-- Display Settings Panel -->
-    <div id="displaySettingsPanel" class="settings-panel">
-        <div class="settings-title">Display Settings</div>
-        
         <div class="settings-section">
             <h3>Timer Settings</h3>
             <div class="settings-row">
@@ -825,6 +794,8 @@
         </div>
         
         <div class="settings-buttons">
+            <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
+            <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
             <button class="btn btn-warning btn-small" onclick="resetToDefaults()">Reset to Defaults</button>
             <button class="btn btn-secondary btn-small" onclick="exportSettings()">Export Settings</button>
             <button class="btn btn-secondary btn-small" onclick="importSettings()">Import Settings</button>
@@ -835,11 +806,20 @@
         build v0.2a (alpha) by FebruaryKid
     </div>
 
+    <div id="lockButton" class="lock-button" onclick="toggleLock()">
+        <svg id="lockIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-unlock">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+        </svg>
+    </div>
+
     <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script>
         // Color schemes data
         const colorSchemes = [
+            // ZINC as default
+            { name: 'Zinc', primary: '#52525b', secondary: '#18181b', accent: '#71717a', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Default', primary: '#F05F57', secondary: '#360940', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Ocean', primary: '#0891b2', secondary: '#0c4a6e', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Forest', primary: '#059669', secondary: '#064e3b', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
@@ -853,25 +833,18 @@
             { name: 'Emerald', primary: '#059669', secondary: '#064e3b', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Blue', primary: '#2563eb', secondary: '#1e3a8a', accent: '#3b82f6', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Cyan', primary: '#0891b2', secondary: '#164e63', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
-            { name: 'Lime', primary: '#65a30d', secondary: '#365314', accent: '#84cc16', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Lime', primary: '#65a30d', secondary: '#365314', accent: '#84cc16', warning: '#f59e0b', danger: '#ef4444' }, // Lime scheme
             { name: 'Rose', primary: '#e11d48', secondary: '#881337', accent: '#f43f5e', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Violet', primary: '#7c3aed', secondary: '#4c1d95', accent: '#8b5cf6', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Fuchsia', primary: '#c026d3', secondary: '#86198f', accent: '#d946ef', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Sky', primary: '#0ea5e9', secondary: '#0c4a6e', accent: '#38bdf8', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Slate', primary: '#475569', secondary: '#1e293b', accent: '#64748b', warning: '#f59e0b', danger: '#ef4444' },
-            { name: 'Zinc', primary: '#52525b', secondary: '#18181b', accent: '#71717a', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Stone', primary: '#57534e', secondary: '#1c1917', accent: '#78716c', warning: '#f59e0b', danger: '#ef4444' }
         ];
 
-        // Global function to update debug info
-        function updateDebugInfo(status, command, url) {
-            const debugPanel = document.getElementById('debugInfo');
-            if (debugPanel) {
-                document.getElementById('debugStatus').textContent = status;
-                document.getElementById('debugCommand').textContent = command || 'N/A';
-                document.getElementById('debugUrl').textContent = url || 'N/A';
-                debugPanel.style.display = 'block'; // Ensure panel is visible
-            }
+        // Helper function to find a color scheme by name
+        function getSchemeByName(name) {
+            return colorSchemes.find(scheme => scheme.name === name);
         }
 
         // Timer Controller Class
@@ -889,6 +862,7 @@
                 this.vmixPort = 8088;
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
+                this.isLocked = false; // New state for lock
                 
                 this.init();
             }
@@ -899,6 +873,7 @@
                 this.updateDisplay();
                 this.renderColorSchemes();
                 this.setupTimerStyles();
+                this.updateLockState(); // Initialize lock state
             }
 
             setupEventListeners() {
@@ -906,7 +881,9 @@
                 const timerDuration = document.getElementById('timerDuration');
                 const timerScale = document.getElementById('timerScale');
                 const timerStyle = document.getElementById('timerStyle');
-                
+                const settingsToggle = document.getElementById('settingsToggle');
+                const resetBtn = document.getElementById('resetBtn');
+
                 mainBtn.addEventListener('click', () => this.toggleTimer());
                 timerDuration.addEventListener('change', (e) => this.updateDuration(e.target.value));
                 timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
@@ -916,6 +893,14 @@
                 const colorInputs = ['primaryColor', 'secondaryColor', 'accentColor', 'warningColor', 'dangerColor'];
                 colorInputs.forEach(id => {
                     document.getElementById(id).addEventListener('change', (e) => this.updateColor(id, e.target.value));
+                });
+
+                // Spacebar control
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault(); // Prevent default spacebar action (e.g., scrolling)
+                        this.toggleTimer();
+                    }
                 });
             }
 
@@ -957,12 +942,13 @@
                 this.updateColor('accentColor', scheme.accent);
                 this.updateColor('warningColor', scheme.warning);
                 this.updateColor('dangerColor', scheme.danger);
+                this.saveSettings(); // Save settings after applying color scheme
             }
 
             updateColor(property, value) {
                 const cssProperty = `--${property.replace('Color', '').toLowerCase()}-color`;
                 document.documentElement.style.setProperty(cssProperty, value);
-                this.saveSettings();
+                // No need to save here, as applyColorScheme will call saveSettings
             }
 
             updateDuration(minutes) {
@@ -1001,7 +987,7 @@
                 
                 this.updateMicStatus(true);
                 this.animateTimer();
-                this.saveSettings();
+                this.applyColorScheme(getSchemeByName('Lime')); // Change to LIME on start
             }
 
             pauseTimer() {
@@ -1017,7 +1003,7 @@
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
-                this.saveSettings();
+                this.applyColorScheme(getSchemeByName('Red')); // Change to RED on pause
             }
 
             resumeTimer() {
@@ -1031,7 +1017,7 @@
                 
                 this.updateMicStatus(true);
                 this.animateTimer();
-                this.saveSettings();
+                this.applyColorScheme(getSchemeByName('Lime')); // Resume with LIME scheme
             }
 
             resetTimer() {
@@ -1051,7 +1037,7 @@
                 }
                 
                 this.updateDisplay();
-                this.saveSettings();
+                this.applyColorScheme(getSchemeByName('Zinc')); // Reset to ZINC scheme
             }
 
             animateTimer() {
@@ -1136,32 +1122,23 @@
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    this.sendVMixCommand(`AudioOn&Input=${this.micInput}`);
+                    this.sendVMixCommand(`FUNCTION Audio ${this.micInput}`);
                 } else {
                     micStatus.className = 'mic-status mic-muted';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    this.sendVMixCommand(`AudioOff&Input=${this.micInput}`);
+                    this.sendVMixCommand(`FUNCTION AudioOff ${this.micInput}`);
                 }
             }
 
             sendVMixCommand(command) {
-                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`; // Corrected API command structure
-                // Update debug info
-                updateDebugInfo('Sending command...', command, url);
-
-                // Use no-cors mode for vMix commands
-                fetch(url, { method: 'GET', mode: 'no-cors' }).then(() => {
+                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?${command}`;
+                
+                fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors' // This allows cross-origin requests but limits response access
+                }).catch(error => {
                     console.log('vMix command sent (no-cors mode):', command);
-                    updateDebugInfo('✅ Command sent (no-cors)', command, url);
-                    // In no-cors mode, we can't get a direct success/fail response,
-                    // so we assume it was sent. Update status to connected if successful,
-                    // but don't change to disconnected on error here, let testConnection handle that.
-                    updateConnectionStatus(true); 
-                }).catch(e => {
-                    console.error('vMix command failed:', e);
-                    updateDebugInfo('❌ Command failed', command, url);
-                    // We don't change connection status here, as this is for individual commands.
-                    // The testConnection function is responsible for overall connection status.
+                    // In no-cors mode, we can't access the response, but the command is still sent
                 });
             }
 
@@ -1186,7 +1163,8 @@
                         startTime: this.startTime,
                         pausedTime: this.pausedTime,
                         totalPausedTime: this.totalPausedTime
-                    }
+                    },
+                    isLocked: this.isLocked // Save lock state
                 };
                 
                 // Store in memory (since localStorage is not available)
@@ -1201,6 +1179,7 @@
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
                 if (settings.micInput) this.micInput = settings.micInput;
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
+                if (typeof settings.isLocked !== 'undefined') this.isLocked = settings.isLocked; // Load lock state
                 
                 // Update UI elements
                 document.getElementById('timerDuration').value = this.duration / (60 * 1000);
@@ -1215,11 +1194,14 @@
                     document.documentElement.style.setProperty('--timer-scale', settings.timerScale);
                 }
                 
+                // Apply colors, prioritizing saved settings or default to ZINC
                 if (settings.colors) {
                     Object.entries(settings.colors).forEach(([key, value]) => {
                         document.getElementById(`${key}Color`).value = value;
-                        this.updateColor(`${key}Color`, value);
+                        document.documentElement.style.setProperty(`--${key.replace('Color', '').toLowerCase()}-color`, value);
                     });
+                } else {
+                    this.applyColorScheme(getSchemeByName('Zinc')); // Apply Zinc if no saved colors
                 }
                 
                 // Restore timer state
@@ -1237,35 +1219,57 @@
                         mainBtn.textContent = 'Pause';
                         mainBtn.className = 'btn btn-warning';
                         this.updateMicStatus(true);
+                        this.applyColorScheme(getSchemeByName('Lime')); // Apply LIME if timer was running
                     } else if (this.isPaused) {
                         const mainBtn = document.getElementById('mainBtn');
                         mainBtn.textContent = 'Resume';
                         mainBtn.className = 'btn btn-primary';
                         this.updateMicStatus(false);
+                        this.applyColorScheme(getSchemeByName('Red')); // Apply RED if timer was paused
                     }
+                } else {
+                     this.applyColorScheme(getSchemeByName('Zinc')); // Apply Zinc if no saved timer state
                 }
+            }
+
+            // Update lock state
+            updateLockState() {
+                const settingsToggle = document.getElementById('settingsToggle');
+                const resetBtn = document.getElementById('resetBtn');
+                const lockButton = document.getElementById('lockButton');
+                const lockIcon = document.getElementById('lockIcon');
+
+                if (this.isLocked) {
+                    settingsToggle.classList.add('locked-disabled');
+                    resetBtn.classList.add('locked-disabled');
+                    lockButton.classList.add('locked');
+                    lockButton.title = "Unlock Settings";
+                    // Change icon to locked
+                    lockIcon.innerHTML = `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>`;
+                } else {
+                    settingsToggle.classList.remove('locked-disabled');
+                    resetBtn.classList.remove('locked-disabled');
+                    lockButton.classList.remove('locked');
+                    lockButton.title = "Lock Settings";
+                    // Change icon to unlocked
+                    lockIcon.innerHTML = `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                          <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>`;
+                }
+                this.saveSettings();
             }
         }
 
         // Initialize the controller
         const controller = new TimerController();
 
-        // Separate settings panel toggles
-        function toggleConnectionSettings() {
-            const panel = document.getElementById('connectionSettingsPanel');
+        // Settings panel functions
+        function toggleSettings() {
+            if (controller.isLocked) return; // Prevent interaction if locked
+            const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('active');
-            // Ensure other panel is closed
-            document.getElementById('displaySettingsPanel').classList.remove('active');
         }
 
-        function toggleDisplaySettings() {
-            const panel = document.getElementById('displaySettingsPanel');
-            panel.classList.toggle('active');
-            // Ensure other panel is closed
-            document.getElementById('connectionSettingsPanel').classList.remove('active');
-        }
-
-        // Connect to vMix function (called from connection panel)
         function connectToVMix() {
             const ip = document.getElementById('vmixIP').value;
             const port = document.getElementById('vmixPort').value;
@@ -1279,38 +1283,24 @@
             controller.saveSettings();
         }
             
-        // Test connection function (called from connection panel)
         function testConnection() {
             testVMixConnection();
         }
 
-        // Function to test vMix connection robustly
         function testVMixConnection() {
-            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/?Function=Blank`; // Sending a harmless Blank command
-            updateDebugInfo('Testing connection...', 'Blank', url);
-
+            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/`;
+            
             fetch(url, {
                 method: 'GET',
-                mode: 'no-cors' // Use no-cors for initial connection test to bypass CORS issues.
+                mode: 'no-cors'
             }).then(() => {
                 updateConnectionStatus(true);
-                updateDebugInfo('✅ Connection test sent (no-cors)', 'Blank', url);
-                showMessageBox('Connection Test', 
-                    `Connection test command sent to vMix at ${controller.vmixIP}:${controller.vmixPort}. ` +
-                    `This indicates the network link is open. Please check vMix to confirm receipt (e.g., if any input changed).`, 
-                    'success');
+                console.log('vMix connection test successful');
+                // Removed alert as per general code instructions (no alert())
             }).catch(error => {
                 updateConnectionStatus(false);
-                updateDebugInfo('❌ Connection test failed completely', 'Blank', url);
                 console.error('vMix connection failed:', error);
-                showMessageBox('Connection Failed',
-                    `Could not reach vMix at ${controller.vmixIP}:${controller.vmixPort}. Please check the following:\n\n` +
-                    `1. Is vMix running on the specified IP address and port?\n` +
-                    `2. Is the vMix Web API enabled in vMix settings? (Go to Settings -> Web Controller)\n` +
-                    `3. Is there a firewall blocking the connection on your computer or network?\n` +
-                    `4. Is the IP address correct and accessible from where you are running this page? (e.g., same local network if using private IP)`,
-                    'error'
-                );
+                // Removed alert as per general code instructions (no alert())
             });
         }
 
@@ -1328,21 +1318,21 @@
         }
 
         function resetToDefaults() {
-            const defaultScheme = colorSchemes[0];
+            if (controller.isLocked) return; // Prevent interaction if locked
+            const defaultScheme = getSchemeByName('Zinc'); // Reset to Zinc
             controller.applyColorScheme(defaultScheme);
             document.getElementById('timerDuration').value = 40;
             document.getElementById('timerScale').value = 1;
             document.getElementById('timerStyle').value = 'modern';
-            // Do not reset vMix IP/Port here, as those are connection specific and user might want to keep them.
-            // document.getElementById('vmixIP').value = '127.0.0.1';
-            // document.getElementById('vmixPort').value = 8088;
-            document.getElementById('micInput').value = 'Mic1'; // Reset mic input name
+            document.getElementById('vmixIP').value = '127.0.0.1';
+            document.getElementById('vmixPort').value = 8088;
+            document.getElementById('micInput').value = 'Mic1';
             
             controller.updateDuration(40);
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
-            // controller.vmixIP = '127.0.0.1'; // Don't reset from here
-            // controller.vmixPort = 8088; // Don't reset from here
+            controller.vmixIP = '127.0.0.1';
+            controller.vmixPort = 8088;
             controller.micInput = 'Mic1';
             controller.saveSettings();
         }
@@ -1371,9 +1361,9 @@
                         const settings = JSON.parse(e.target.result);
                         window.timerSettings = settings;
                         controller.loadSettings();
-                        showMessageBox('Import Settings', 'Settings imported successfully!', 'success');
+                        // Removed alert as per general code instructions (no alert())
                     } catch (error) {
-                        showMessageBox('Import Settings', 'Failed to import settings. Please check the file format.', 'error');
+                        // Removed alert as per general code instructions (no alert())
                     }
                 };
                 reader.readAsText(file);
@@ -1381,118 +1371,21 @@
             fileInput.click();
         }
 
-        // Custom message box functions (replaces alert and confirm)
-        function showMessageBox(title, message, type = 'info') {
-            const messageBoxContainer = document.createElement('div');
-            messageBoxContainer.id = 'messageBoxContainer';
-            messageBoxContainer.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-                opacity: 0;
-                transition: opacity 0.3s ease-in-out;
-            `;
-
-            const messageBox = document.createElement('div');
-            messageBox.style.cssText = `
-                background: rgba(0, 0, 0, 0.8);
-                backdrop-filter: blur(15px);
-                border-radius: 12px;
-                padding: 30px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-                color: white;
-                text-align: center;
-                max-width: 400px;
-                width: 90%;
-                transform: translateY(-20px);
-                transition: transform 0.3s ease-in-out;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            `;
-
-            const titleElem = document.createElement('h3');
-            titleElem.textContent = title;
-            titleElem.style.cssText = `
-                margin-bottom: 15px;
-                font-size: 1.4rem;
-                color: var(--text-color);
-            `;
-
-            const messageElem = document.createElement('p');
-            // Use white-space: pre-wrap to render newlines from the message string
-            messageElem.textContent = message;
-            messageElem.style.cssText = `
-                margin-bottom: 25px;
-                font-size: 1.1rem;
-                line-height: 1.5;
-                color: rgba(255, 255, 255, 0.9);
-                white-space: pre-wrap;
-            `;
-
-            const closeButton = document.createElement('button');
-            closeButton.textContent = 'OK';
-            closeButton.className = 'btn'; // Reuse existing button style
-            
-            // Add type-specific styling
-            if (type === 'success') {
-                closeButton.classList.add('btn-primary');
-            } else if (type === 'error') {
-                closeButton.classList.add('btn-danger');
-            } else if (type === 'warning') {
-                closeButton.classList.add('btn-warning');
-            } else {
-                closeButton.classList.add('btn-secondary');
-            }
-
-
-            closeButton.onclick = () => {
-                messageBoxContainer.style.opacity = '0';
-                messageBox.style.transform = 'translateY(-20px)';
-                setTimeout(() => {
-                    document.body.removeChild(messageBoxContainer);
-                }, 300); // Match transition duration
-            };
-
-            messageBox.appendChild(titleElem);
-            messageBox.appendChild(messageElem);
-            messageBox.appendChild(closeButton);
-            messageBoxContainer.appendChild(messageBox);
-            document.body.appendChild(messageBoxContainer);
-
-            // Animate in
-            setTimeout(() => {
-                messageBoxContainer.style.opacity = '1';
-                messageBox.style.transform = 'translateY(0)';
-            }, 10);
+        // Lock/Unlock functionality
+        function toggleLock() {
+            controller.isLocked = !controller.isLocked;
+            controller.updateLockState();
         }
 
-        // Close settings panels when clicking outside
+        // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
-            const connectionPanel = document.getElementById('connectionSettingsPanel');
-            const displayPanel = document.getElementById('displaySettingsPanel');
-            const toggleButtons = document.querySelectorAll('.settings-toggle'); // Select all toggle buttons
+            const panel = document.getElementById('settingsPanel');
+            const toggle = document.getElementById('settingsToggle'); // Use ID for consistency
             
-            let clickedInsideAnyPanel = false;
-            if (connectionPanel && connectionPanel.contains(e.target)) clickedInsideAnyPanel = true;
-            if (displayPanel && displayPanel.contains(e.target)) clickedInsideAnyPanel = true;
-
-            let clickedOnToggleButton = false;
-            toggleButtons.forEach(button => {
-                if (button.contains(e.target)) clickedOnToggleButton = true;
-            });
-
-            if (!clickedInsideAnyPanel && !clickedOnToggleButton) {
-                if (connectionPanel) connectionPanel.classList.remove('active');
-                if (displayPanel) displayPanel.classList.remove('active');
+            if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+                panel.classList.remove('active');
             }
         });
-
 
         // Initialize connection status
         updateConnectionStatus(false);
