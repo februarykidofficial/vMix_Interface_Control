@@ -191,7 +191,8 @@
             height: 100%;
             background: linear-gradient(90deg, var(--accent-color), #059669);
             border-radius: calc(4px * var(--timer-scale));
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Changed transition to be faster and linear */
+            transition: width 0.1s linear; 
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
             position: relative;
         }
@@ -206,7 +207,7 @@
             background: var(--text-color);
             border-radius: 50%;
             box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
-            transition: right 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Removed transition as it was not effective for this fixed right property */
         }
 
         .control-section {
@@ -1021,10 +1022,10 @@
                     timerDisplay.classList.add('timer-paused');
                 }
                 
-               // Update progress bar - countdown from 100% to 0%
-				const progress = Math.max(0, remaining / this.duration); // Show remaining time as progress
-				const progressBar = document.getElementById('progressBar');
-				progressBar.style.width = `${progress * 100}%`;
+                // Update progress bar - countdown from 100% to 0%
+                const progress = Math.max(0, remaining / this.duration); // Show remaining time as progress
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = `${progress * 100}%`;
                 
                 // Handle timer expiration
                 if (isExpired && this.isRunning) {
