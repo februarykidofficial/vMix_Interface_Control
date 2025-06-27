@@ -89,11 +89,7 @@
         }
 
         .timer-display {
-            font-size: calc(5.5rem * var(--timer-scale));
-            font-weight: 200;
-            font-family: var(--timer-style) == 'retro' ? 'SF Mono' : 'Inter', Monaco, 'Cascadia Code', monospace;
             margin: calc(40px * var(--timer-scale)) 0;
-            letter-spacing: calc(6px * var(--timer-scale));
             position: relative;
             display: flex;
             align-items: baseline;
@@ -103,12 +99,61 @@
 
         .timer-main {
             font-size: calc(5.5rem * var(--timer-scale));
+            font-weight: 200;
+            letter-spacing: calc(6px * var(--timer-scale));
+            position: relative;
+            font-family: 'Inter', Monaco, 'Cascadia Code', monospace;
+        }
+
+        /* Timer Styles */
+        .timer-style-modern .timer-main {
+            font-family: 'Inter', sans-serif;
+            font-weight: 200;
+        }
+
+        .timer-style-retro .timer-main {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-weight: 400;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .timer-style-minimal .timer-main {
+            font-family: 'Inter', sans-serif;
+            font-weight: 100;
+            letter-spacing: calc(12px * var(--timer-scale));
+        }
+
+        .timer-style-bold .timer-main {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .timer-style-elegant .timer-main {
+            font-family: 'Times New Roman', serif;
+            font-weight: 300;
+            font-style: italic;
+        }
+
+        .timer-style-digital .timer-main {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.3);
+            padding: calc(10px * var(--timer-scale)) calc(20px * var(--timer-scale));
+            border-radius: calc(8px * var(--timer-scale));
+            border: 2px solid currentColor;
         }
 
         .timer-ms {
             font-size: calc(2.2rem * var(--timer-scale));
             opacity: 0.7;
             font-weight: 300;
+            font-family: 'SF Mono', Monaco, monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: calc(5px * var(--timer-scale)) calc(10px * var(--timer-scale));
+            border-radius: calc(6px * var(--timer-scale));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
 
         .timer-running {
@@ -495,6 +540,33 @@
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
+        .color-schemes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-scheme {
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-scheme:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .color-scheme.active {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
         @media (max-width: 768px) {
             .main-panel {
                 padding: calc(40px * var(--timer-scale));
@@ -502,6 +574,11 @@
             }
 
             .timer-display {
+                flex-direction: column;
+                gap: calc(10px * var(--timer-scale));
+            }
+
+            .timer-main {
                 font-size: calc(4rem * var(--timer-scale));
                 letter-spacing: calc(3px * var(--timer-scale));
             }
@@ -527,6 +604,10 @@
                 top: 120px;
                 min-width: auto;
                 max-width: none;
+            }
+
+            .color-schemes {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
             }
         }
     </style>
@@ -561,7 +642,7 @@
     <div class="container">
         <div class="main-panel">
             <div class="timer-container">
-                <div id="timerDisplay" class="timer-display">
+                <div id="timerDisplay" class="timer-display timer-style-modern">
                     <span class="timer-main">40:00</span>
                     <span class="timer-ms">.000</span>
                 </div>
@@ -626,12 +707,22 @@
                     <option value="modern">Modern</option>
                     <option value="retro">Retro</option>
                     <option value="minimal">Minimal</option>
+                    <option value="bold">Bold</option>
+                    <option value="elegant">Elegant</option>
+                    <option value="digital">Digital</option>
                 </select>
             </div>
         </div>
 
         <div class="settings-section">
-            <h3>Colors</h3>
+            <h3>Color Schemes</h3>
+            <div class="color-schemes" id="colorSchemes">
+                <!-- Color schemes will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Custom Colors</h3>
             <div class="settings-row">
                 <label>Primary Color</label>
                 <input type="color" id="primaryColor" class="color-input" value="#F05F57">
@@ -674,466 +765,532 @@
     <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script>
-        class SpeakerController {
+        // Color schemes data
+        const colorSchemes = [
+            { name: 'Default', primary: '#F05F57', secondary: '#360940', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Ocean', primary: '#0891b2', secondary: '#0c4a6e', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Forest', primary: '#059669', secondary: '#064e3b', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Sunset', primary: '#ea580c', secondary: '#9a3412', accent: '#f97316', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Purple', primary: '#9333ea', secondary: '#581c87', accent: '#a855f7', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Pink', primary: '#e11d48', secondary: '#881337', accent: '#f43f5e', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Indigo', primary: '#4f46e5', secondary: '#312e81', accent: '#6366f1', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Teal', primary: '#0d9488', secondary: '#134e4a', accent: '#14b8a6', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Red', primary: '#dc2626', secondary: '#7f1d1d', accent: '#ef4444', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Amber', primary: '#d97706', secondary: '#92400e', accent: '#f59e0b', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Emerald', primary: '#059669', secondary: '#064e3b', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Blue', primary: '#2563eb', secondary: '#1e3a8a', accent: '#3b82f6', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Cyan', primary: '#0891b2', secondary: '#164e63', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Lime', primary: '#65a30d', secondary: '#365314', accent: '#84cc16', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Rose', primary: '#e11d48', secondary: '#881337', accent: '#f43f5e', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Violet', primary: '#7c3aed', secondary: '#4c1d95', accent: '#8b5cf6', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Fuchsia', primary: '#c026d3', secondary: '#86198f', accent: '#d946ef', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Sky', primary: '#0ea5e9', secondary: '#0c4a6e', accent: '#38bdf8', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Slate', primary: '#475569', secondary: '#1e293b', accent: '#64748b', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Zinc', primary: '#52525b', secondary: '#18181b', accent: '#71717a', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Stone', primary: '#57534e', secondary: '#1c1917', accent: '#78716c', warning: '#f59e0b', danger: '#ef4444' }
+        ];
+
+        // Timer Controller Class
+        class TimerController {
             constructor() {
+                this.isRunning = false;
+                this.isPaused = false;
+                this.startTime = 0;
+                this.pausedTime = 0;
+                this.totalPausedTime = 0;
+                this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
+                this.vmixConnection = null;
+                this.micInput = 'Mic1';
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
-                this.micInputName = 'Mic1';
-                this.isConnected = false;
-                this.timerDuration = 40; // minutes
+                this.animationFrame = null;
+                this.currentStyle = 'modern';
                 
-                // Timer state
-                this.timer = {
-                    time: this.timerDuration * 60 * 1000, // milliseconds
-                    isRunning: false,
-                    interval: null,
-                    startTime: null
-                };
-                
-                // Microphone state
-                this.micState = false; // false = muted, true = live
-                
-                this.initializeEventListeners();
-                this.loadSettings();
-                this.updateDisplay();
-                this.connectToVMix();
+                this.init();
             }
 
-            initializeEventListeners() {
-                document.getElementById('mainBtn').addEventListener('click', () => this.toggleTimer());
+            init() {
+                this.setupEventListeners();
+                this.loadSettings();
+                this.updateDisplay();
+                this.renderColorSchemes();
+                this.setupTimerStyles();
+            }
 
-                // Settings inputs
-                document.getElementById('vmixIP').addEventListener('change', (e) => {
-                    this.vmixIP = e.target.value;
-                    this.saveSettings();
-                });
-                document.getElementById('vmixPort').addEventListener('change', (e) => {
-                    this.vmixPort = parseInt(e.target.value);
-                    this.saveSettings();
-                });
-                document.getElementById('micInput').addEventListener('change', (e) => {
-                    this.micInputName = e.target.value;
-                    this.saveSettings();
-                });
-                document.getElementById('timerDuration').addEventListener('change', (e) => {
-                    this.timerDuration = parseInt(e.target.value);
-                    this.resetTimer();
-                    this.saveSettings();
-                });
-
+            setupEventListeners() {
+                const mainBtn = document.getElementById('mainBtn');
+                const timerDuration = document.getElementById('timerDuration');
+                const timerScale = document.getElementById('timerScale');
+                const timerStyle = document.getElementById('timerStyle');
+                
+                mainBtn.addEventListener('click', () => this.toggleTimer());
+                timerDuration.addEventListener('change', (e) => this.updateDuration(e.target.value));
+                timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
+                timerStyle.addEventListener('change', (e) => this.updateTimerStyle(e.target.value));
+                
                 // Color inputs
-                document.getElementById('primaryColor').addEventListener('change', (e) => {
-                    document.documentElement.style.setProperty('--primary-color', e.target.value);
-                    this.saveSettings();
+                const colorInputs = ['primaryColor', 'secondaryColor', 'accentColor', 'warningColor', 'dangerColor'];
+                colorInputs.forEach(id => {
+                    document.getElementById(id).addEventListener('change', (e) => this.updateColor(id, e.target.value));
                 });
-                document.getElementById('secondaryColor').addEventListener('change', (e) => {
-                    document.documentElement.style.setProperty('--secondary-color', e.target.value);
-                    this.saveSettings();
-                });
-                document.getElementById('accentColor').addEventListener('change', (e) => {
-                    document.documentElement.style.setProperty('--accent-color', e.target.value);
-                    this.saveSettings();
-                });
-                document.getElementById('warningColor').addEventListener('change', (e) => {
-                    document.documentElement.style.setProperty('--warning-color', e.target.value);
-                    this.saveSettings();
-                });
-                document.getElementById('dangerColor').addEventListener('change', (e) => {
-                    document.documentElement.style.setProperty('--danger-color', e.target.value);
-                    this.saveSettings();
-                });
+            }
 
-                // Timer scale
-                document.getElementById('timerScale').addEventListener('input', (e) => {
-                    const scale = parseFloat(e.target.value);
-                    document.documentElement.style.setProperty('--timer-scale', scale);
-                    document.getElementById('scaleValue').textContent = scale.toFixed(1) + 'x';
-                    this.saveSettings();
-                });
+            setupTimerStyles() {
+                const timerDisplay = document.getElementById('timerDisplay');
+                timerDisplay.className = `timer-display timer-style-${this.currentStyle}`;
+            }
 
-                // Timer style
-                document.getElementById('timerStyle').addEventListener('change', (e) => {
-                    document.documentElement.style.setProperty('--timer-style', e.target.value);
-                    this.saveSettings();
-                });
+            updateTimerStyle(style) {
+                this.currentStyle = style;
+                const timerDisplay = document.getElementById('timerDisplay');
+                timerDisplay.className = `timer-display timer-style-${style}`;
+                this.saveSettings();
+            }
 
-                // Import file
-                document.getElementById('importFile').addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            try {
-                                const settings = JSON.parse(event.target.result);
-                                this.applySettings(settings);
-                                this.showNotification('Settings imported successfully!', true);
-                            } catch (error) {
-                                this.showNotification('Invalid settings file!', false);
-                            }
-                        };
-                        reader.readAsText(file);
-                    }
+            renderColorSchemes() {
+                const container = document.getElementById('colorSchemes');
+                container.innerHTML = '';
+                
+                colorSchemes.forEach((scheme, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'color-scheme';
+                    div.style.background = `linear-gradient(135deg, ${scheme.primary} 0%, ${scheme.secondary} 100%)`;
+                    div.title = scheme.name;
+                    div.onclick = () => this.applyColorScheme(scheme);
+                    container.appendChild(div);
                 });
+            }
+
+            applyColorScheme(scheme) {
+                document.getElementById('primaryColor').value = scheme.primary;
+                document.getElementById('secondaryColor').value = scheme.secondary;
+                document.getElementById('accentColor').value = scheme.accent;
+                document.getElementById('warningColor').value = scheme.warning;
+                document.getElementById('dangerColor').value = scheme.danger;
+                
+                this.updateColor('primaryColor', scheme.primary);
+                this.updateColor('secondaryColor', scheme.secondary);
+                this.updateColor('accentColor', scheme.accent);
+                this.updateColor('warningColor', scheme.warning);
+                this.updateColor('dangerColor', scheme.danger);
+            }
+
+            updateColor(property, value) {
+                const cssProperty = `--${property.replace('Color', '').toLowerCase()}-color`;
+                document.documentElement.style.setProperty(cssProperty, value);
+                this.saveSettings();
+            }
+
+            updateDuration(minutes) {
+                this.duration = minutes * 60 * 1000;
+                if (!this.isRunning) {
+                    this.updateDisplay();
+                }
+                this.saveSettings();
+            }
+
+            updateScale(scale) {
+                document.documentElement.style.setProperty('--timer-scale', scale);
+                document.getElementById('scaleValue').textContent = `${scale}x`;
+                this.saveSettings();
             }
 
             toggleTimer() {
-                if (this.timer.isRunning) {
-                    this.pauseTimer();
-                } else {
+                if (!this.isRunning && !this.isPaused) {
                     this.startTimer();
+                } else if (this.isRunning) {
+                    this.pauseTimer();
+                } else if (this.isPaused) {
+                    this.resumeTimer();
                 }
-            }
-
-            async connectToVMix() {
-                try {
-                    const response = await fetch(`http://${this.vmixIP}:${this.vmixPort}/api/`);
-                    
-                    if (response.ok) {
-                        this.isConnected = true;
-                        this.updateConnectionStatus(true);
-                    } else {
-                        throw new Error('Connection failed');
-                    }
-                } catch (error) {
-                    this.isConnected = false;
-                    this.updateConnectionStatus(false);
-                }
-            }
-
-            async testConnection() {
-                await this.connectToVMix();
-                const message = this.isConnected ? 
-                    'Connected to vMix successfully!' : 
-                    'Failed to connect to vMix. Check settings.';
-                
-                this.showNotification(message, this.isConnected);
-            }
-
-            showNotification(message, isSuccess) {
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: ${isSuccess ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'};
-                    color: white;
-                    padding: 16px 24px;
-                    border-radius: 12px;
-                    font-weight: 500;
-                    z-index: 1000;
-                    backdrop-filter: blur(10px);
-                `;
-                notification.textContent = message;
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
-            }
-
-            updateConnectionStatus(connected) {
-                const indicator = document.getElementById('statusIndicator');
-                const text = document.getElementById('connectionText');
-                
-                if (connected) {
-                    indicator.classList.add('connected');
-                    text.textContent = 'vMix Connected';
-                } else {
-                    indicator.classList.remove('connected');
-                    text.textContent = 'vMix Disconnected';
-                }
-            }
-
-            async sendVMixCommand(command) {
-                if (!this.isConnected) {
-                    return false;
-                }
-
-                try {
-                    const response = await fetch(`http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`);
-                    return response.ok;
-                } catch (error) {
-                    this.isConnected = false;
-                    this.updateConnectionStatus(false);
-                    return false;
-                }
-            }
-
-            async setMicrophoneState(state) {
-                const command = state ? 
-                    `AudioOn&Input=${this.micInputName}` : 
-                    `AudioOff&Input=${this.micInputName}`;
-                
-                await this.sendVMixCommand(command);
-                this.micState = state;
-                this.updateMicStatus();
             }
 
             startTimer() {
-                if (this.timer.isRunning) return;
-
-                this.timer.isRunning = true;
-                this.timer.startTime = Date.now() - (this.timerDuration * 60 * 1000 - this.timer.time);
-                this.setMicrophoneState(true);
-
-                this.timer.interval = setInterval(() => {
-                    const elapsed = Date.now() - this.timer.startTime;
-                    this.timer.time = Math.max(0, this.timerDuration * 60 * 1000 - elapsed);
-                    
-                    if (this.timer.time > 0) {
-                        this.updateDisplay();
-                    } else {
-                        this.timerExpired();
-                    }
-                }, 10); // Update every 10ms for smooth milliseconds
-
-                this.updateButtons();
+                this.isRunning = true;
+                this.isPaused = false;
+                this.startTime = Date.now();
+                this.totalPausedTime = 0;
+                
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.textContent = 'Pause';
+                mainBtn.className = 'btn btn-warning';
+                
+                this.updateMicStatus(true);
+                this.animateTimer();
+                this.saveSettings();
             }
 
             pauseTimer() {
-                if (!this.timer.isRunning) return;
+                this.isRunning = false;
+                this.isPaused = true;
+                this.pausedTime = Date.now();
+                
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.textContent = 'Resume';
+                mainBtn.className = 'btn btn-primary';
+                
+                this.updateMicStatus(false);
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+                this.saveSettings();
+            }
 
-                this.timer.isRunning = false;
-                clearInterval(this.timer.interval);
-                this.setMicrophoneState(false);
-                this.updateButtons();
+            resumeTimer() {
+                this.isRunning = true;
+                this.isPaused = false;
+                this.totalPausedTime += Date.now() - this.pausedTime;
+                
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.textContent = 'Pause';
+                mainBtn.className = 'btn btn-warning';
+                
+                this.updateMicStatus(true);
+                this.animateTimer();
+                this.saveSettings();
             }
 
             resetTimer() {
-                this.timer.isRunning = false;
-                clearInterval(this.timer.interval);
-                this.timer.time = this.timerDuration * 60 * 1000;
-                this.setMicrophoneState(false);
+                this.isRunning = false;
+                this.isPaused = false;
+                this.startTime = 0;
+                this.pausedTime = 0;
+                this.totalPausedTime = 0;
+                
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.textContent = 'Start';
+                mainBtn.className = 'btn btn-primary';
+                
+                this.updateMicStatus(false);
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+                
                 this.updateDisplay();
-                this.updateButtons();
+                this.saveSettings();
             }
 
-            timerExpired() {
-                this.timer.isRunning = false;
-                clearInterval(this.timer.interval);
-                this.timer.time = 0;
-                this.setMicrophoneState(false); // Auto turn off microphone
-                this.updateDisplay();
-                this.updateButtons();
-                this.showNotification('Time expired! Microphone automatically muted.', false);
+            animateTimer() {
+                const update = () => {
+                    if (this.isRunning) {
+                        this.updateDisplay();
+                        this.animationFrame = requestAnimationFrame(update);
+                    }
+                };
+                update();
             }
 
             updateDisplay() {
-                const totalMs = this.timer.time;
-                const totalSeconds = Math.floor(totalMs / 1000);
-                const milliseconds = totalMs % 1000;
+                const now = Date.now();
+                let elapsed = 0;
+                
+                if (this.isRunning) {
+                    elapsed = now - this.startTime - this.totalPausedTime;
+                } else if (this.isPaused) {
+                    elapsed = this.pausedTime - this.startTime - this.totalPausedTime;
+                }
+                
+                const remaining = Math.max(0, this.duration - elapsed);
+                const isExpired = remaining === 0;
+                
+                // Calculate time components
+                const totalSeconds = Math.floor(remaining / 1000);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
+                const milliseconds = remaining % 1000;
                 
+                // Format time display
                 const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 const msString = `.${milliseconds.toString().padStart(3, '0')}`;
-
+                
+                // Update display elements
                 const timerMain = document.querySelector('.timer-main');
                 const timerMs = document.querySelector('.timer-ms');
-                const timerElement = document.getElementById('timerDisplay');
+                const timerDisplay = document.getElementById('timerDisplay');
                 
                 timerMain.textContent = timeString;
                 timerMs.textContent = msString;
-
-                // Update timer class based on state
-                timerElement.className = 'timer-display';
-                if (totalMs === 0) {
-                    timerElement.classList.add('timer-expired');
-                } else if (this.timer.isRunning) {
-                    timerElement.classList.add('timer-running');
-                } else if (totalMs < this.timerDuration * 60 * 1000) {
-                    timerElement.classList.add('timer-paused');
-                }
-
-                // Update progress bar
-                const totalTime = this.timerDuration * 60 * 1000;
-                const progressPercent = (totalMs / totalTime) * 100;
-                document.getElementById('progressBar').style.width = `${progressPercent}%`;
-            }
-
-            updateButtons() {
-                const mainBtn = document.getElementById('mainBtn');
-
-                if (this.timer.isRunning) {
-                    mainBtn.textContent = 'Pause';
-                    mainBtn.className = 'btn btn-warning';
-                } else if (this.timer.time === 0) {
-                    mainBtn.textContent = 'Expired';
-                    mainBtn.className = 'btn btn-danger';
-                    mainBtn.disabled = true;
-                } else {
-                    mainBtn.textContent = this.timer.time === this.timerDuration * 60 * 1000 ? 'Start' : 'Resume';
-                    mainBtn.className = 'btn btn-primary';
-                    mainBtn.disabled = false;
-                }
-            }
-
-            updateMicStatus() {
-                const statusElement = document.getElementById('micStatus');
-                const textElement = statusElement.querySelector('span');
                 
-                if (this.micState) {
-                    statusElement.className = 'mic-status mic-live';
-                    textElement.textContent = 'Microphone Live';
+                // Update timer state classes
+                timerDisplay.classList.remove('timer-running', 'timer-paused', 'timer-expired');
+                if (isExpired) {
+                    timerDisplay.classList.add('timer-expired');
+                } else if (this.isRunning) {
+                    timerDisplay.classList.add('timer-running');
+                } else if (this.isPaused) {
+                    timerDisplay.classList.add('timer-paused');
+                }
+                
+                // Update progress bar
+                const progress = Math.max(0, remaining / this.duration);
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = `${progress * 100}%`;
+                
+                // Handle timer expiration
+                if (isExpired && this.isRunning) {
+                    this.onTimerExpired();
+                }
+            }
+
+            onTimerExpired() {
+                this.isRunning = false;
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.textContent = 'Start';
+                mainBtn.className = 'btn btn-danger';
+                
+                this.updateMicStatus(false);
+                
+                // Flash the page
+                document.body.style.animation = 'pulse-red 1s ease-in-out 3';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 3000);
+            }
+
+            updateMicStatus(isLive) {
+                const micStatus = document.getElementById('micStatus');
+                if (isLive) {
+                    micStatus.className = 'mic-status mic-live';
+                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
+                    this.sendVMixCommand(`FUNCTION Audio ${this.micInput}`);
                 } else {
-                    statusElement.className = 'mic-status mic-muted';
-                    textElement.textContent = 'Microphone Muted';
+                    micStatus.className = 'mic-status mic-muted';
+                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
+                    this.sendVMixCommand(`FUNCTION AudioOff ${this.micInput}`);
+                }
+            }
+
+            sendVMixCommand(command) {
+                if (this.vmixConnection && this.vmixConnection.readyState === WebSocket.OPEN) {
+                    this.vmixConnection.send(command);
                 }
             }
 
             saveSettings() {
                 const settings = {
+                    duration: this.duration,
                     vmixIP: this.vmixIP,
                     vmixPort: this.vmixPort,
-                    micInputName: this.micInputName,
-                    timerDuration: this.timerDuration,
-                    primaryColor: document.getElementById('primaryColor').value,
-                    secondaryColor: document.getElementById('secondaryColor').value,
-                    accentColor: document.getElementById('accentColor').value,
-                    warningColor: document.getElementById('warningColor').value,
-                    dangerColor: document.getElementById('dangerColor').value,
-                    timerScale: document.getElementById('timerScale').value,
-                    timerStyle: document.getElementById('timerStyle').value
+                    micInput: this.micInput,
+                    timerScale: document.documentElement.style.getPropertyValue('--timer-scale') || '1',
+                    timerStyle: this.currentStyle,
+                    colors: {
+                        primary: document.getElementById('primaryColor').value,
+                        secondary: document.getElementById('secondaryColor').value,
+                        accent: document.getElementById('accentColor').value,
+                        warning: document.getElementById('warningColor').value,
+                        danger: document.getElementById('dangerColor').value
+                    },
+                    timerState: {
+                        isRunning: this.isRunning,
+                        isPaused: this.isPaused,
+                        startTime: this.startTime,
+                        pausedTime: this.pausedTime,
+                        totalPausedTime: this.totalPausedTime
+                    }
                 };
                 
-                // Store in memory (localStorage not available)
-                this.currentSettings = settings;
+                // Store in memory (since localStorage is not available)
+                window.timerSettings = settings;
             }
 
             loadSettings() {
-                // Default settings - would normally load from localStorage
-                const defaultSettings = {
-                    vmixIP: '127.0.0.1',
-                    vmixPort: 8088,
-                    micInputName: 'Mic1',
-                    timerDuration: 40,
-                    primaryColor: '#F05F57',
-                    secondaryColor: '#360940',
-                    accentColor: '#10b981',
-                    warningColor: '#f59e0b',
-                    dangerColor: '#ef4444',
-                    timerScale: '1',
-                    timerStyle: 'modern'
-                };
-
-                this.applySettings(this.currentSettings || defaultSettings);
-            }
-
-            applySettings(settings) {
-                // Apply connection settings
-                this.vmixIP = settings.vmixIP || '127.0.0.1';
-                this.vmixPort = settings.vmixPort || 8088;
-                this.micInputName = settings.micInputName || 'Mic1';
-                this.timerDuration = settings.timerDuration || 40;
-
-                // Update form inputs
+                const settings = window.timerSettings || {};
+                
+                if (settings.duration) this.duration = settings.duration;
+                if (settings.vmixIP) this.vmixIP = settings.vmixIP;
+                if (settings.vmixPort) this.vmixPort = settings.vmixPort;
+                if (settings.micInput) this.micInput = settings.micInput;
+                if (settings.timerStyle) this.currentStyle = settings.timerStyle;
+                
+                // Update UI elements
+                document.getElementById('timerDuration').value = this.duration / (60 * 1000);
                 document.getElementById('vmixIP').value = this.vmixIP;
                 document.getElementById('vmixPort').value = this.vmixPort;
-                document.getElementById('micInput').value = this.micInputName;
-                document.getElementById('timerDuration').value = this.timerDuration;
-
-                // Apply colors
-                document.getElementById('primaryColor').value = settings.primaryColor || '#F05F57';
-                document.getElementById('secondaryColor').value = settings.secondaryColor || '#360940';
-                document.getElementById('accentColor').value = settings.accentColor || '#10b981';
-                document.getElementById('warningColor').value = settings.warningColor || '#f59e0b';
-                document.getElementById('dangerColor').value = settings.dangerColor || '#ef4444';
-
-                // Apply CSS variables
-                document.documentElement.style.setProperty('--primary-color', settings.primaryColor || '#F05F57');
-                document.documentElement.style.setProperty('--secondary-color', settings.secondaryColor || '#360940');
-                document.documentElement.style.setProperty('--accent-color', settings.accentColor || '#10b981');
-                document.documentElement.style.setProperty('--warning-color', settings.warningColor || '#f59e0b');
-                document.documentElement.style.setProperty('--danger-color', settings.dangerColor || '#ef4444');
-
-                // Apply scale
-                const scale = settings.timerScale || '1';
-                document.getElementById('timerScale').value = scale;
-                document.getElementById('scaleValue').textContent = parseFloat(scale).toFixed(1) + 'x';
-                document.documentElement.style.setProperty('--timer-scale', scale);
-
-                // Apply style
-                document.getElementById('timerStyle').value = settings.timerStyle || 'modern';
-                document.documentElement.style.setProperty('--timer-style', settings.timerStyle || 'modern');
-
-                // Reset timer with new duration
-                this.resetTimer();
-                this.saveSettings();
+                document.getElementById('micInput').value = this.micInput;
+                document.getElementById('timerStyle').value = this.currentStyle;
+                
+                if (settings.timerScale) {
+                    document.getElementById('timerScale').value = settings.timerScale;
+                    document.getElementById('scaleValue').textContent = `${settings.timerScale}x`;
+                    document.documentElement.style.setProperty('--timer-scale', settings.timerScale);
+                }
+                
+                if (settings.colors) {
+                    Object.entries(settings.colors).forEach(([key, value]) => {
+                        document.getElementById(`${key}Color`).value = value;
+                        this.updateColor(`${key}Color`, value);
+                    });
+                }
+                
+                // Restore timer state
+                if (settings.timerState) {
+                    const state = settings.timerState;
+                    this.isRunning = state.isRunning;
+                    this.isPaused = state.isPaused;
+                    this.startTime = state.startTime;
+                    this.pausedTime = state.pausedTime;
+                    this.totalPausedTime = state.totalPausedTime;
+                    
+                    if (this.isRunning) {
+                        this.animateTimer();
+                        const mainBtn = document.getElementById('mainBtn');
+                        mainBtn.textContent = 'Pause';
+                        mainBtn.className = 'btn btn-warning';
+                        this.updateMicStatus(true);
+                    } else if (this.isPaused) {
+                        const mainBtn = document.getElementById('mainBtn');
+                        mainBtn.textContent = 'Resume';
+                        mainBtn.className = 'btn btn-primary';
+                        this.updateMicStatus(false);
+                    }
+                }
             }
         }
 
-        // Settings panel toggle
+        // Initialize the controller
+        const controller = new TimerController();
+
+        // Settings panel functions
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('active');
         }
 
-        // Global functions for settings
         function connectToVMix() {
-            controller.vmixIP = document.getElementById('vmixIP').value;
-            controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
-            controller.micInputName = document.getElementById('micInput').value;
-            controller.connectToVMix();
+            const ip = document.getElementById('vmixIP').value;
+            const port = document.getElementById('vmixPort').value;
+            const micInput = document.getElementById('micInput').value;
+            
+            controller.vmixIP = ip;
+            controller.vmixPort = port;
+            controller.micInput = micInput;
+            
+            // Close existing connection
+            if (controller.vmixConnection) {
+                controller.vmixConnection.close();
+            }
+            
+            // Create new WebSocket connection
+            try {
+                controller.vmixConnection = new WebSocket(`ws://${ip}:${port}`);
+                
+                controller.vmixConnection.onopen = () => {
+                    updateConnectionStatus(true);
+                    console.log('Connected to vMix');
+                };
+                
+                controller.vmixConnection.onclose = () => {
+                    updateConnectionStatus(false);
+                    console.log('Disconnected from vMix');
+                };
+                
+                controller.vmixConnection.onerror = (error) => {
+                    updateConnectionStatus(false);
+                    console.error('vMix connection error:', error);
+                };
+            } catch (error) {
+                updateConnectionStatus(false);
+                console.error('Failed to connect to vMix:', error);
+            }
+            
+            controller.saveSettings();
         }
 
         function testConnection() {
-            controller.testConnection();
+            connectToVMix();
+            setTimeout(() => {
+                if (controller.vmixConnection && controller.vmixConnection.readyState === WebSocket.OPEN) {
+                    alert('Connection successful!');
+                } else {
+                    alert('Connection failed. Please check your settings.');
+                }
+            }, 2000);
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('connectionText');
+            
+            if (connected) {
+                indicator.classList.add('connected');
+                text.textContent = 'vMix Connected';
+            } else {
+                indicator.classList.remove('connected');
+                text.textContent = 'vMix Disconnected';
+            }
         }
 
         function resetToDefaults() {
-            const defaultSettings = {
-                vmixIP: '127.0.0.1',
-                vmixPort: 8088,
-                micInputName: 'Mic1',
-                timerDuration: 40,
-                primaryColor: '#F05F57',
-                secondaryColor: '#360940',
-                accentColor: '#10b981',
-                warningColor: '#f59e0b',
-                dangerColor: '#ef4444',
-                timerScale: '1',
-                timerStyle: 'modern'
-            };
-
-            controller.applySettings(defaultSettings);
-            controller.showNotification('Settings reset to defaults!', true);
+            const defaultScheme = colorSchemes[0];
+            controller.applyColorScheme(defaultScheme);
+            document.getElementById('timerDuration').value = 40;
+            document.getElementById('timerScale').value = 1;
+            document.getElementById('timerStyle').value = 'modern';
+            document.getElementById('vmixIP').value = '127.0.0.1';
+            document.getElementById('vmixPort').value = 8088;
+            document.getElementById('micInput').value = 'Mic1';
+            
+            controller.updateDuration(40);
+            controller.updateScale(1);
+            controller.updateTimerStyle('modern');
+            controller.vmixIP = '127.0.0.1';
+            controller.vmixPort = 8088;
+            controller.micInput = 'Mic1';
+            controller.saveSettings();
         }
 
         function exportSettings() {
-            const settings = controller.currentSettings || {};
+            const settings = window.timerSettings || {};
             const dataStr = JSON.stringify(settings, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = 'speaker-timer-settings.json';
-            document.body.appendChild(link);
+            link.href = url;
+            link.download = 'timer-settings.json';
             link.click();
-            document.body.removeChild(link);
-            
-            controller.showNotification('Settings exported successfully!', true);
+            URL.revokeObjectURL(url);
         }
 
         function importSettings() {
-            document.getElementById('importFile').click();
+            const fileInput = document.getElementById('importFile');
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const settings = JSON.parse(e.target.result);
+                        window.timerSettings = settings;
+                        controller.loadSettings();
+                        alert('Settings imported successfully!');
+                    } catch (error) {
+                        alert('Failed to import settings. Please check the file format.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
         }
 
-        // Initialize controller
-        let controller;
-        window.addEventListener('load', () => {
-            controller = new SpeakerController();
-        });
-
-        // Close settings when clicking outside
+        // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
-            const settingsPanel = document.getElementById('settingsPanel');
-            const settingsToggle = document.querySelector('.settings-toggle');
+            const panel = document.getElementById('settingsPanel');
+            const toggle = document.querySelector('.settings-toggle');
             
-            if (!settingsPanel.contains(e.target) && !settingsToggle.contains(e.target)) {
-                settingsPanel.classList.remove('active');
+            if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+                panel.classList.remove('active');
             }
         });
+
+        // Initialize connection status
+        updateConnectionStatus(false);
+
+        // Auto-save settings periodically
+        setInterval(() => {
+            controller.saveSettings();
+        }, 30000); // Save every 30 seconds
     </script>
 </body>
 </html>
