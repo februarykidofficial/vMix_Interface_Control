@@ -1021,10 +1021,10 @@
                     timerDisplay.classList.add('timer-paused');
                 }
                 
-                // Update progress bar
-                const progress = Math.max(0, remaining / this.duration);
-                const progressBar = document.getElementById('progressBar');
-                progressBar.style.width = `${progress * 100}%`;
+               // Update progress bar - countdown from 100% to 0%
+				const progress = Math.max(0, remaining / this.duration); // Show remaining time as progress
+				const progressBar = document.getElementById('progressBar');
+				progressBar.style.width = `${progress * 100}%`;
                 
                 // Handle timer expiration
                 if (isExpired && this.isRunning) {
