@@ -559,9 +559,7 @@
             transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
             z-index: 50; /* Above main-panel, below top-controls and lock button */
             pointer-events: auto; 
-            /* Add subtle border/shadow for the full screen overlay to mimic the main panel's overall rounded effect */
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 0 60px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.3); /* Global diffused shadow */
+            /* Removed border and box-shadow to eliminate perceived square corners on the full-screen overlay */
         }
 
         .click-to-unlock-overlay.hidden {
@@ -979,83 +977,13 @@
                 }
             }
             
-            // Helper to check if currently zoomed in (scale > 1.0) - Removed, as zoom is removed.
-            // isZoomedIn() {
-            //     return parseFloat(document.documentElement.style.getPropertyValue('--timer-scale')) > 1.0;
-            // }
-
-            // Removed global hold listeners for zoom out
-            // handleGlobalHoldStart(e) {
-            //     if (e.type === 'mousedown' && e.button !== 0) return; 
-            //     if (this.isExcludedElement(e.target)) {
-            //         this.clearZoomOutHoldTimer(); 
-            //         console.log("Hold started on an excluded element. Ignoring for zoom-out.");
-            //         return;
-            //     }
-            //     if (this.isZoomedIn()) {
-            //         e.preventDefault(); 
-            //         this.isHoldingForZoomOut = true;
-            //         this.zoomOutHoldTimeout = setTimeout(() => {
-            //             if (this.isHoldingForZoomOut && this.isZoomedIn()) { 
-            //                 this.zoomOutToDefault();
-            //             }
-            //             this.isHoldingForZoomOut = false; 
-            //         }, this.zoomOutMinHoldDuration);
-            //     }
-            // }
-
-            // handleGlobalHoldEnd(e) {
-            //     if (e.type === 'mouseup' && e.button !== 0) return; 
-            //     this.clearZoomOutHoldTimer();
-            //     this.isHoldingForZoomOut = false;
-            // }
-
-            // clearZoomOutHoldTimer() {
-            //     if (this.zoomOutHoldTimeout) {
-            //         clearTimeout(this.zoomOutHoldTimeout);
-            //         this.zoomOutHoldTimeout = null;
-            //     }
-            // }
-
             // This function is now only called by successful 3-interactions to toggle the lock state
             toggleTimerControlsLock() {
                 this.isTimerControlsLocked = !this.isTimerControlsLocked; // Toggle the timer controls lock
                 console.log(`Timer controls (click/spacebar) are now ${this.isTimerControlsLocked ? 'LOCKED' : 'UNLOCKED'}.`);
                 this.updateTimerControlsLockState(); // Update UI
                 this.saveSettings(); // Save the new state
-                
-                // Removed zoom-in/out calls
-                // if (!this.isTimerControlsLocked) { 
-                //     this.zoomInToFit(); 
-                // } else {
-                //     this.zoomOutToDefault();
-                // }
             }
-
-            // Zoom functionality removed
-            // zoomInToFit() {
-            //     const mainPanel = document.querySelector('.main-panel');
-            //     document.documentElement.style.setProperty('--timer-scale', '1');
-            //     const baseHeight = mainPanel.offsetHeight;
-            //     const baseWidth = mainPanel.offsetWidth;
-            //     let scaleByHeight = (window.innerHeight * 0.85) / baseHeight;
-            //     let scaleByWidth = (window.innerWidth * 0.90) / baseWidth;
-            //     let newScale = Math.min(scaleByHeight, scaleByWidth); 
-            //     newScale = Math.min(2.5, Math.max(0.5, newScale));
-            //     document.documentElement.style.setProperty('--timer-scale', newScale);
-            //     document.getElementById('timerScale').value = newScale;
-            //     document.getElementById('scaleValue').textContent = `${newScale.toFixed(1)}x`;
-            //     this.saveSettings();
-            //     console.log(`Zoomed in to: ${newScale.toFixed(1)}x`);
-            // }
-
-            // zoomOutToDefault() {
-            //     document.documentElement.style.setProperty('--timer-scale', '1');
-            //     document.getElementById('timerScale').value = 1;
-            //     document.getElementById('scaleValue').textContent = `1.0x`;
-            //     this.saveSettings();
-            //     console.log("Zoomed out to default size.");
-            // }
 
             setupTimerStyles() {
                 const timerDisplay = document.getElementById('timerDisplay');
