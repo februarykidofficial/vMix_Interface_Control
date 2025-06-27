@@ -31,6 +31,15 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            cursor: default; /* Default body cursor, will be updated by JS */
+        }
+
+        body.locked-timer-cursor {
+            cursor: not-allowed;
+        }
+
+        body.unlocked-timer-cursor {
+            cursor: pointer;
         }
 
         .container {
@@ -70,10 +79,10 @@
         .main-panel {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
-            border-radius: 32px;
+            border-radius: 50px; /* Increased for more pronounced rounding */
             padding: calc(60px * var(--timer-scale));
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05); /* Made border much less visible */
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); /* Stronger, softer shadow */
             max-width: calc(600px * var(--timer-scale));
             width: 100%;
             text-align: center;
@@ -81,6 +90,8 @@
             z-index: 1;
             transform: scale(var(--timer-scale));
             transform-origin: center;
+            transition: transform 0.3s ease-in-out; /* Add transition for smooth zoom */
+            pointer-events: auto; /* Always allow pointer events on main panel for clicks to bubble */
         }
 
         .timer-container {
@@ -191,7 +202,6 @@
             height: 100%;
             background: linear-gradient(90deg, var(--accent-color), #059669);
             border-radius: calc(4px * var(--timer-scale));
-            /* Changed transition to be faster and linear */
             transition: width 0.1s linear; 
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
             position: relative;
@@ -207,92 +217,12 @@
             background: var(--text-color);
             border-radius: 50%;
             box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
-            /* Removed transition as it was not effective for this fixed right property */
         }
 
         .control-section {
             margin: calc(40px * var(--timer-scale)) 0;
-        }
-
-        .control-buttons {
-            display: flex;
-            gap: calc(20px * var(--timer-scale));
+            display: flex; 
             justify-content: center;
-            margin-bottom: calc(30px * var(--timer-scale));
-        }
-
-        .btn {
-            padding: calc(18px * var(--timer-scale)) calc(36px * var(--timer-scale));
-            border: none;
-            border-radius: calc(16px * var(--timer-scale));
-            font-size: calc(1.1rem * var(--timer-scale));
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: calc(1px * var(--timer-scale));
-            position: relative;
-            overflow: hidden;
-            min-width: calc(140px * var(--timer-scale));
-        }
-
-        .btn:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover:before {
-            left: 100%;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-color), #059669);
-            color: white;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning-color), #d97706);
-            color: white;
-            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #6b7280, #4b5563);
-            color: white;
-            box-shadow: 0 8px 24px rgba(107, 114, 128, 0.3);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger-color), #dc2626);
-            color: white;
-            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn:disabled:hover {
-            transform: none;
         }
 
         .mic-status {
@@ -335,6 +265,9 @@
             display: flex;
             gap: 15px;
             z-index: 100;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; /* Add transitions */
+            opacity: 1; /* Default visible */
+            visibility: visible; /* Default visible */
         }
 
         .connection-panel {
@@ -378,6 +311,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            pointer-events: auto; 
         }
 
         .settings-toggle:hover {
@@ -398,6 +332,7 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             color: var(--danger-color);
+            pointer-events: auto; 
         }
 
         .reset-btn:hover {
@@ -423,6 +358,7 @@
             visibility: hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 99;
+            pointer-events: auto; 
         }
 
         .settings-panel.active {
@@ -585,6 +521,7 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             z-index: 100;
+            pointer-events: auto; 
         }
 
         .lock-button:hover {
@@ -603,6 +540,54 @@
             cursor: not-allowed !important;
             pointer-events: none; /* Disable all mouse events */
         }
+
+        /* Styles for the new click-to-unlock overlay */
+        .click-to-unlock-overlay {
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--glass-bg); /* Use glass background for full screen shadow effect */
+            backdrop-filter: blur(20px); /* Apply the blur to the entire overlay */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            font-weight: bold;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            z-index: 50; /* Above main-panel, below top-controls and lock button */
+            pointer-events: auto; 
+            /* Add subtle border/shadow for the full screen overlay to mimic the main panel's overall rounded effect */
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.3); /* Global diffused shadow */
+        }
+
+        .click-to-unlock-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* Disable interaction when hidden */
+        }
+
+        .click-to-unlock-overlay span {
+            padding: 12px 28px; 
+            border-radius: 20px; 
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.7), rgba(217, 119, 6, 0.7)); 
+            color: rgba(255, 255, 255, 0.9); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4); 
+            font-size: calc(1.8rem * var(--timer-scale)); 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: pulse-overlay 1.8s infinite alternate ease-in-out; 
+            text-shadow: none; 
+        }
+
+        @keyframes pulse-overlay {
+            0% { transform: scale(1); opacity: 0.9; }
+            100% { transform: scale(1.03); opacity: 1; } /* Subtler pulse effect */
+        }
+
 
         @media (max-width: 768px) {
             .main-panel {
@@ -653,6 +638,10 @@
                 bottom: 10px;
                 right: 10px;
             }
+
+            .click-to-unlock-overlay {
+                font-size: calc(1.5rem * var(--timer-scale));
+            }
         }
     </style>
 </head>
@@ -685,6 +674,11 @@
 
     <div class="container">
         <div class="main-panel">
+            <!-- New overlay for click-to-unlock functionality -->
+            <div id="clickToUnlockOverlay" class="click-to-unlock-overlay">
+                <span>TOUCH 3 TIMES TO UNLOCK</span>
+            </div>
+
             <div class="timer-container">
                 <div id="timerDisplay" class="timer-display timer-style-modern">
                     <span class="timer-main">40:00</span>
@@ -699,10 +693,6 @@
             </div>
             
             <div class="control-section">
-                <div class="control-buttons">
-                    <button id="mainBtn" class="btn btn-primary">Start</button>
-                </div>
-                
                 <div id="micStatus" class="mic-status mic-muted">
                     <div class="mic-indicator"></div>
                     <span>Microphone Muted</span>
@@ -803,7 +793,7 @@
     </div>
 
     <div class="version-info">
-        build v0.2a (alpha) by FebruaryKid
+        build v0.7a (alpha) by FebruaryKid
     </div>
 
     <div id="lockButton" class="lock-button" onclick="toggleLock()">
@@ -862,8 +852,23 @@
                 this.vmixPort = 8088;
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
-                this.isLocked = false; // New state for lock
+                this.isLocked = true; // State for settings/reset (controlled by circular lock button)
+                this.isTimerControlsLocked = true; // NEW: State for "click anywhere" and spacebar control (default to locked)
+                this.isFlashing = false; // State for flashing colors
+                this.flashInterval = null; // Interval ID for flashing
+                this.flashColorToggle = false; // Toggle between Amber (true) and Lime (false)
                 
+                // For 3-click unlock functionality
+                this.unlockClickCount = 0; // Tracks consecutive clicks for unlock
+                this.lastClickTimestamp = 0; // Timestamp of the last click
+                this.consecutiveClickThreshold = 500; // Max time between clicks to be considered "consecutive" (0.5 seconds)
+                this.requiredClicksToUnlock = 3; // Number of clicks to unlock
+
+                // Zoom functionality related properties removed
+                // this.isHoldingForZoomOut = false;
+                // this.zoomOutHoldTimeout = null;
+                // this.zoomOutMinHoldDuration = 4000; // 4 seconds
+
                 this.init();
             }
 
@@ -873,18 +878,18 @@
                 this.updateDisplay();
                 this.renderColorSchemes();
                 this.setupTimerStyles();
-                this.updateLockState(); // Initialize lock state
+                // Ensure lock states are updated on init based on loaded settings
+                this.updateLockState(); 
+                this.updateTimerControlsLockState(); 
             }
 
             setupEventListeners() {
-                const mainBtn = document.getElementById('mainBtn');
                 const timerDuration = document.getElementById('timerDuration');
                 const timerScale = document.getElementById('timerScale');
                 const timerStyle = document.getElementById('timerStyle');
-                const settingsToggle = document.getElementById('settingsToggle');
-                const resetBtn = document.getElementById('resetBtn');
+                // Removed lockButton event listener for zoom functionality
+                // const lockButton = document.getElementById('lockButton'); 
 
-                mainBtn.addEventListener('click', () => this.toggleTimer());
                 timerDuration.addEventListener('change', (e) => this.updateDuration(e.target.value));
                 timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
                 timerStyle.addEventListener('change', (e) => this.updateTimerStyle(e.target.value));
@@ -895,14 +900,162 @@
                     document.getElementById(id).addEventListener('change', (e) => this.updateColor(id, e.target.value));
                 });
 
-                // Spacebar control
-                document.addEventListener('keydown', (e) => {
-                    if (e.code === 'Space') {
-                        e.preventDefault(); // Prevent default spacebar action (e.g., scrolling)
-                        this.toggleTimer();
-                    }
-                });
+                // Attach a single global click listener to the body for both unlock and timer toggle
+                document.body.addEventListener('click', this.handleGlobalInteraction.bind(this));
+                // Global keydown for spacebar interaction (also using the unified handler)
+                document.body.addEventListener('keydown', this.handleGlobalInteraction.bind(this));
+
+                // Removed global hold listeners for zoom out
+                // document.body.addEventListener('mousedown', this.handleGlobalHoldStart.bind(this));
+                // document.body.addEventListener('mouseup', this.handleGlobalHoldEnd.bind(this));
+                // document.body.addEventListener('touchstart', this.handleGlobalHoldStart.bind(this));
+                // document.body.addEventListener('touchend', this.handleGlobalHoldEnd.bind(this));
+
+                // The lock button itself still has its original toggleLock functionality via onclick directly in HTML
             }
+
+            // Helper to check if event target is an explicitly excluded element
+            isExcludedElement(target) {
+                const settingsToggle = document.getElementById('settingsToggle');
+                const resetBtn = document.getElementById('resetBtn');
+                const lockButton = document.getElementById('lockButton');
+                const settingsPanel = document.getElementById('settingsPanel');
+                const importFile = document.getElementById('importFile'); // Hidden input
+                const micStatus = document.getElementById('micStatus'); // Mic status area
+
+                // Check if the target or any of its parents is one of the explicitly excluded elements
+                let currentTarget = target;
+                while (currentTarget) {
+                    if (currentTarget === settingsToggle || 
+                        currentTarget === resetBtn || 
+                        currentTarget === lockButton ||
+                        currentTarget === settingsPanel ||
+                        currentTarget === importFile ||
+                        currentTarget === micStatus ||
+                        currentTarget.tagName === 'INPUT' || 
+                        currentTarget.tagName === 'SELECT' || 
+                        currentTarget.tagName === 'BUTTON') {
+                        return true;
+                    }
+                    if (currentTarget === document.body) break; 
+                    currentTarget = currentTarget.parentNode;
+                }
+                return false;
+            }
+
+            // Unified handler for global clicks and spacebar presses
+            handleGlobalInteraction(e) {
+                // Ignore if it's a keydown event for anything other than space
+                if (e.type === 'keydown' && e.code !== 'Space') return;
+                // Prevent default spacebar behavior (scrolling)
+                if (e.code === 'Space') e.preventDefault();
+
+                // If the clicked element is one of the excluded controls, do nothing for this handler.
+                if (this.isExcludedElement(e.target)) {
+                    console.log("Interaction on an excluded element. Ignoring for global timer/unlock logic.");
+                    return;
+                }
+
+                const now = Date.now();
+
+                if (this.isTimerControlsLocked) {
+                    // Logic for 3-click unlock (applies to both click and spacebar)
+                    if (now - this.lastClickTimestamp < this.consecutiveClickThreshold) {
+                        this.unlockClickCount++;
+                        console.log(`Unlock interaction count: ${this.unlockClickCount}`);
+                        if (this.unlockClickCount >= this.requiredClicksToUnlock) {
+                            this.toggleTimerControlsLock(); // Unlock the timer controls
+                            this.unlockClickCount = 0; // Reset count after unlocking
+                        }
+                    } else {
+                        this.unlockClickCount = 1; // Start a new interaction sequence
+                    }
+                    this.lastClickTimestamp = now;
+                    console.log("Timer control is locked. Touch/Click or Press Spacebar 3 times to unlock.");
+                } else {
+                    // If unlocked, a single interaction toggles the timer
+                    this.toggleTimer();
+                    this.unlockClickCount = 0; // Reset click count after a successful toggle
+                }
+            }
+            
+            // Helper to check if currently zoomed in (scale > 1.0) - Removed, as zoom is removed.
+            // isZoomedIn() {
+            //     return parseFloat(document.documentElement.style.getPropertyValue('--timer-scale')) > 1.0;
+            // }
+
+            // Removed global hold listeners for zoom out
+            // handleGlobalHoldStart(e) {
+            //     if (e.type === 'mousedown' && e.button !== 0) return; 
+            //     if (this.isExcludedElement(e.target)) {
+            //         this.clearZoomOutHoldTimer(); 
+            //         console.log("Hold started on an excluded element. Ignoring for zoom-out.");
+            //         return;
+            //     }
+            //     if (this.isZoomedIn()) {
+            //         e.preventDefault(); 
+            //         this.isHoldingForZoomOut = true;
+            //         this.zoomOutHoldTimeout = setTimeout(() => {
+            //             if (this.isHoldingForZoomOut && this.isZoomedIn()) { 
+            //                 this.zoomOutToDefault();
+            //             }
+            //             this.isHoldingForZoomOut = false; 
+            //         }, this.zoomOutMinHoldDuration);
+            //     }
+            // }
+
+            // handleGlobalHoldEnd(e) {
+            //     if (e.type === 'mouseup' && e.button !== 0) return; 
+            //     this.clearZoomOutHoldTimer();
+            //     this.isHoldingForZoomOut = false;
+            // }
+
+            // clearZoomOutHoldTimer() {
+            //     if (this.zoomOutHoldTimeout) {
+            //         clearTimeout(this.zoomOutHoldTimeout);
+            //         this.zoomOutHoldTimeout = null;
+            //     }
+            // }
+
+            // This function is now only called by successful 3-interactions to toggle the lock state
+            toggleTimerControlsLock() {
+                this.isTimerControlsLocked = !this.isTimerControlsLocked; // Toggle the timer controls lock
+                console.log(`Timer controls (click/spacebar) are now ${this.isTimerControlsLocked ? 'LOCKED' : 'UNLOCKED'}.`);
+                this.updateTimerControlsLockState(); // Update UI
+                this.saveSettings(); // Save the new state
+                
+                // Removed zoom-in/out calls
+                // if (!this.isTimerControlsLocked) { 
+                //     this.zoomInToFit(); 
+                // } else {
+                //     this.zoomOutToDefault();
+                // }
+            }
+
+            // Zoom functionality removed
+            // zoomInToFit() {
+            //     const mainPanel = document.querySelector('.main-panel');
+            //     document.documentElement.style.setProperty('--timer-scale', '1');
+            //     const baseHeight = mainPanel.offsetHeight;
+            //     const baseWidth = mainPanel.offsetWidth;
+            //     let scaleByHeight = (window.innerHeight * 0.85) / baseHeight;
+            //     let scaleByWidth = (window.innerWidth * 0.90) / baseWidth;
+            //     let newScale = Math.min(scaleByHeight, scaleByWidth); 
+            //     newScale = Math.min(2.5, Math.max(0.5, newScale));
+            //     document.documentElement.style.setProperty('--timer-scale', newScale);
+            //     document.getElementById('timerScale').value = newScale;
+            //     document.getElementById('scaleValue').textContent = `${newScale.toFixed(1)}x`;
+            //     this.saveSettings();
+            //     console.log(`Zoomed in to: ${newScale.toFixed(1)}x`);
+            // }
+
+            // zoomOutToDefault() {
+            //     document.documentElement.style.setProperty('--timer-scale', '1');
+            //     document.getElementById('timerScale').value = 1;
+            //     document.getElementById('scaleValue').textContent = `1.0x`;
+            //     this.saveSettings();
+            //     console.log("Zoomed out to default size.");
+            // }
 
             setupTimerStyles() {
                 const timerDisplay = document.getElementById('timerDisplay');
@@ -937,18 +1090,22 @@
                 document.getElementById('warningColor').value = scheme.warning;
                 document.getElementById('dangerColor').value = scheme.danger;
                 
-                this.updateColor('primaryColor', scheme.primary);
-                this.updateColor('secondaryColor', scheme.secondary);
-                this.updateColor('accentColor', scheme.accent);
-                this.updateColor('warningColor', scheme.warning);
-                this.updateColor('dangerColor', scheme.danger);
-                this.saveSettings(); // Save settings after applying color scheme
+                this.updateBodyColors(scheme);
+                this.saveSettings();
+            }
+
+            updateBodyColors(scheme) {
+                document.documentElement.style.setProperty('--primary-color', scheme.primary);
+                document.documentElement.style.setProperty('--secondary-color', scheme.secondary);
+                document.documentElement.style.setProperty('--accent-color', scheme.accent);
+                document.documentElement.style.setProperty('--warning-color', scheme.warning);
+                document.documentElement.style.setProperty('--danger-color', scheme.danger);
             }
 
             updateColor(property, value) {
                 const cssProperty = `--${property.replace('Color', '').toLowerCase()}-color`;
                 document.documentElement.style.setProperty(cssProperty, value);
-                // No need to save here, as applyColorScheme will call saveSettings
+                this.saveSettings();
             }
 
             updateDuration(minutes) {
@@ -959,13 +1116,8 @@
                 this.saveSettings();
             }
 
-            updateScale(scale) {
-                document.documentElement.style.setProperty('--timer-scale', scale);
-                document.getElementById('scaleValue').textContent = `${scale}x`;
-                this.saveSettings();
-            }
-
             toggleTimer() {
+                // This function is only called if `isTimerControlsLocked` is false by the global handlers
                 if (!this.isRunning && !this.isPaused) {
                     this.startTimer();
                 } else if (this.isRunning) {
@@ -975,19 +1127,26 @@
                 }
             }
 
+            clearFlashing() {
+                if (this.flashInterval) {
+                    clearInterval(this.flashInterval);
+                    this.flashInterval = null;
+                }
+                this.isFlashing = false;
+            }
+
             startTimer() {
                 this.isRunning = true;
                 this.isPaused = false;
                 this.startTime = Date.now();
                 this.totalPausedTime = 0;
                 
-                const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = 'Pause';
-                mainBtn.className = 'btn btn-warning';
+                this.clearFlashing();
+                this.applyColorScheme(getSchemeByName('Lime'));
                 
                 this.updateMicStatus(true);
                 this.animateTimer();
-                this.applyColorScheme(getSchemeByName('Lime')); // Change to LIME on start
+                this.saveSettings();
             }
 
             pauseTimer() {
@@ -995,15 +1154,14 @@
                 this.isPaused = true;
                 this.pausedTime = Date.now();
                 
-                const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = 'Resume';
-                mainBtn.className = 'btn btn-primary';
+                this.clearFlashing();
+                this.applyColorScheme(getSchemeByName('Red'));
                 
                 this.updateMicStatus(false);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
-                this.applyColorScheme(getSchemeByName('Red')); // Change to RED on pause
+                this.saveSettings();
             }
 
             resumeTimer() {
@@ -1011,25 +1169,28 @@
                 this.isPaused = false;
                 this.totalPausedTime += Date.now() - this.pausedTime;
                 
-                const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = 'Pause';
-                mainBtn.className = 'btn btn-warning';
+                this.clearFlashing();
+                this.applyColorScheme(getSchemeByName('Lime'));
                 
                 this.updateMicStatus(true);
                 this.animateTimer();
-                this.applyColorScheme(getSchemeByName('Lime')); // Resume with LIME scheme
+                this.saveSettings();
             }
 
             resetTimer() {
+                if (this.isLocked) { // Settings/reset button is locked by the circular lock button
+                    console.log("Settings are locked. Unlock settings to reset the timer.");
+                    return;
+                }
+
                 this.isRunning = false;
                 this.isPaused = false;
                 this.startTime = 0;
                 this.pausedTime = 0;
                 this.totalPausedTime = 0;
                 
-                const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = 'Start';
-                mainBtn.className = 'btn btn-primary';
+                this.clearFlashing();
+                this.applyColorScheme(getSchemeByName('Zinc'));
                 
                 this.updateMicStatus(false);
                 if (this.animationFrame) {
@@ -1037,12 +1198,43 @@
                 }
                 
                 this.updateDisplay();
-                this.applyColorScheme(getSchemeByName('Zinc')); // Reset to ZINC scheme
+                this.isTimerControlsLocked = true; // Lock timer controls after reset
+                this.updateTimerControlsLockState();
+                this.saveSettings();
             }
 
             animateTimer() {
                 const update = () => {
                     if (this.isRunning) {
+                        const now = Date.now();
+                        const elapsed = now - this.startTime - this.totalPausedTime;
+                        const remaining = Math.max(0, this.duration - elapsed);
+
+                        if (remaining > 0 && remaining <= 10000) { 
+                            if (!this.isFlashing) {
+                                this.isFlashing = true;
+                                this.flashColorToggle = true;
+                                this.updateBodyColors(getSchemeByName('Amber'));
+                                this.flashInterval = setInterval(() => {
+                                    if (this.isFlashing) {
+                                        this.flashColorToggle = !this.flashColorToggle;
+                                        if (this.flashColorToggle) {
+                                            this.updateBodyColors(getSchemeByName('Amber'));
+                                        } else {
+                                            this.updateBodyColors(getSchemeByName('Lime'));
+                                        }
+                                    }
+                                }, 500);
+                            }
+                        } else { 
+                            if (this.isFlashing) {
+                                this.clearFlashing();
+                                if (this.isRunning) {
+                                    this.updateBodyColors(getSchemeByName('Lime'));
+                                }
+                            }
+                        }
+                        
                         this.updateDisplay();
                         this.animationFrame = requestAnimationFrame(update);
                     }
@@ -1063,17 +1255,14 @@
                 const remaining = Math.max(0, this.duration - elapsed);
                 const isExpired = remaining === 0;
                 
-                // Calculate time components
                 const totalSeconds = Math.floor(remaining / 1000);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
                 const milliseconds = remaining % 1000;
                 
-                // Format time display
                 const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 const msString = `.${milliseconds.toString().padStart(3, '0')}`;
                 
-                // Update display elements
                 const timerMain = document.querySelector('.timer-main');
                 const timerMs = document.querySelector('.timer-ms');
                 const timerDisplay = document.getElementById('timerDisplay');
@@ -1081,7 +1270,6 @@
                 timerMain.textContent = timeString;
                 timerMs.textContent = msString;
                 
-                // Update timer state classes
                 timerDisplay.classList.remove('timer-running', 'timer-paused', 'timer-expired');
                 if (isExpired) {
                     timerDisplay.classList.add('timer-expired');
@@ -1091,12 +1279,10 @@
                     timerDisplay.classList.add('timer-paused');
                 }
                 
-                // Update progress bar - countdown from 100% to 0%
-                const progress = Math.max(0, remaining / this.duration); // Show remaining time as progress
+                const progress = Math.max(0, remaining / this.duration);
                 const progressBar = document.getElementById('progressBar');
                 progressBar.style.width = `${progress * 100}%`;
                 
-                // Handle timer expiration
                 if (isExpired && this.isRunning) {
                     this.onTimerExpired();
                 }
@@ -1104,16 +1290,17 @@
 
             onTimerExpired() {
                 this.isRunning = false;
-                const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = 'Start';
-                mainBtn.className = 'btn btn-danger';
                 
                 this.updateMicStatus(false);
+                this.clearFlashing();
                 
-                // Flash the page
                 document.body.style.animation = 'pulse-red 1s ease-in-out 3';
                 setTimeout(() => {
                     document.body.style.animation = '';
+                    this.updateBodyColors(getSchemeByName('Zinc'));
+                    this.isTimerControlsLocked = true; // Lock timer controls after expiration
+                    this.updateTimerControlsLockState();
+                    this.saveSettings();
                 }, 3000);
             }
 
@@ -1135,10 +1322,9 @@
                 
                 fetch(url, {
                     method: 'GET',
-                    mode: 'no-cors' // This allows cross-origin requests but limits response access
+                    mode: 'no-cors'
                 }).catch(error => {
                     console.log('vMix command sent (no-cors mode):', command);
-                    // In no-cors mode, we can't access the response, but the command is still sent
                 });
             }
 
@@ -1164,10 +1350,10 @@
                         pausedTime: this.pausedTime,
                         totalPausedTime: this.totalPausedTime
                     },
-                    isLocked: this.isLocked // Save lock state
+                    isLocked: this.isLocked, // Settings/reset lock
+                    isTimerControlsLocked: this.isTimerControlsLocked, // Click anywhere lock
                 };
                 
-                // Store in memory (since localStorage is not available)
                 window.timerSettings = settings;
             }
 
@@ -1179,32 +1365,39 @@
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
                 if (settings.micInput) this.micInput = settings.micInput;
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
-                if (typeof settings.isLocked !== 'undefined') this.isLocked = settings.isLocked; // Load lock state
                 
-                // Update UI elements
+                this.isLocked = typeof settings.isLocked !== 'undefined' ? settings.isLocked : true; // Default settings to locked
+                this.isTimerControlsLocked = typeof settings.isTimerControlsLocked !== 'undefined' ? settings.isTimerControlsLocked : true; // Default timer controls to locked
+
                 document.getElementById('timerDuration').value = this.duration / (60 * 1000);
                 document.getElementById('vmixIP').value = this.vmixIP;
                 document.getElementById('vmixPort').value = this.vmixPort;
                 document.getElementById('micInput').value = this.micInput;
                 document.getElementById('timerStyle').value = this.currentStyle;
                 
-                if (settings.timerScale) {
-                    document.getElementById('timerScale').value = settings.timerScale;
-                    document.getElementById('scaleValue').textContent = `${settings.timerScale}x`;
-                    document.documentElement.style.setProperty('--timer-scale', settings.timerScale);
-                }
+                // Ensure timer scale is always 1 as zoom is removed
+                document.getElementById('timerScale').value = 1;
+                document.getElementById('scaleValue').textContent = `1.0x`;
+                document.documentElement.style.setProperty('--timer-scale', '1');
                 
-                // Apply colors, prioritizing saved settings or default to ZINC
                 if (settings.colors) {
-                    Object.entries(settings.colors).forEach(([key, value]) => {
-                        document.getElementById(`${key}Color`).value = value;
-                        document.documentElement.style.setProperty(`--${key.replace('Color', '').toLowerCase()}-color`, value);
-                    });
+                    const loadedScheme = {
+                        primary: settings.colors.primary,
+                        secondary: settings.colors.secondary,
+                        accent: settings.colors.accent,
+                        warning: settings.colors.warning,
+                        danger: settings.colors.danger
+                    };
+                    this.updateBodyColors(loadedScheme);
+                    document.getElementById('primaryColor').value = loadedScheme.primary;
+                    document.getElementById('secondaryColor').value = loadedScheme.secondary;
+                    document.getElementById('accentColor').value = loadedScheme.accent;
+                    document.getElementById('warningColor').value = loadedScheme.warning;
+                    document.getElementById('dangerColor').value = loadedScheme.danger;
                 } else {
-                    this.applyColorScheme(getSchemeByName('Zinc')); // Apply Zinc if no saved colors
+                    this.applyColorScheme(getSchemeByName('Zinc'));
                 }
                 
-                // Restore timer state
                 if (settings.timerState) {
                     const state = settings.timerState;
                     this.isRunning = state.isRunning;
@@ -1215,46 +1408,66 @@
                     
                     if (this.isRunning) {
                         this.animateTimer();
-                        const mainBtn = document.getElementById('mainBtn');
-                        mainBtn.textContent = 'Pause';
-                        mainBtn.className = 'btn btn-warning';
                         this.updateMicStatus(true);
-                        this.applyColorScheme(getSchemeByName('Lime')); // Apply LIME if timer was running
                     } else if (this.isPaused) {
-                        const mainBtn = document.getElementById('mainBtn');
-                        mainBtn.textContent = 'Resume';
-                        mainBtn.className = 'btn btn-primary';
+                        this.updateBodyColors(getSchemeByName('Red'));
                         this.updateMicStatus(false);
-                        this.applyColorScheme(getSchemeByName('Red')); // Apply RED if timer was paused
+                    } else {
+                        this.updateBodyColors(getSchemeByName('Zinc'));
                     }
                 } else {
-                     this.applyColorScheme(getSchemeByName('Zinc')); // Apply Zinc if no saved timer state
+                     this.updateBodyColors(getSchemeByName('Zinc'));
                 }
+                this.updateLockState(); // Update the settings/reset lock UI (and controls visibility)
+                this.updateTimerControlsLockState(); // Update the click-anywhere lock UI
             }
 
-            // Update lock state
+            // Updates the UI for the settings/reset lock button and top controls visibility
             updateLockState() {
                 const settingsToggle = document.getElementById('settingsToggle');
                 const resetBtn = document.getElementById('resetBtn');
                 const lockButton = document.getElementById('lockButton');
                 const lockIcon = document.getElementById('lockIcon');
+                const topControls = document.querySelector('.top-controls');
 
                 if (this.isLocked) {
                     settingsToggle.classList.add('locked-disabled');
                     resetBtn.classList.add('locked-disabled');
                     lockButton.classList.add('locked');
-                    lockButton.title = "Unlock Settings";
-                    // Change icon to locked
+                    lockButton.title = "Unlock Settings and Reset";
                     lockIcon.innerHTML = `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>`;
+                    // Hide top controls immediately when locked
+                    topControls.style.opacity = '0';
+                    topControls.style.visibility = 'hidden';
                 } else {
                     settingsToggle.classList.remove('locked-disabled');
                     resetBtn.classList.remove('locked-disabled');
                     lockButton.classList.remove('locked');
-                    lockButton.title = "Lock Settings";
-                    // Change icon to unlocked
+                    lockButton.title = "Lock Settings and Reset";
                     lockIcon.innerHTML = `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                           <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>`;
+                    // Show top controls immediately when unlocked
+                    topControls.style.opacity = '1';
+                    topControls.style.visibility = 'visible';
+                }
+                this.saveSettings();
+            }
+
+            // NEW: Updates the UI for the click-anywhere timer controls lock overlay and body cursor
+            updateTimerControlsLockState() {
+                const clickToUnlockOverlay = document.getElementById('clickToUnlockOverlay');
+                const overlayTextSpan = document.querySelector('#clickToUnlockOverlay span'); 
+                
+                if (this.isTimerControlsLocked) {
+                    clickToUnlockOverlay.classList.remove('hidden');
+                    document.body.classList.remove('unlocked-timer-cursor');
+                    document.body.classList.add('locked-timer-cursor'); 
+                    overlayTextSpan.textContent = "TOUCH 3 TIMES TO UNLOCK"; 
+                } else {
+                    clickToUnlockOverlay.classList.add('hidden');
+                    document.body.classList.remove('locked-timer-cursor');
+                    document.body.classList.add('unlocked-timer-cursor'); 
                 }
                 this.saveSettings();
             }
@@ -1263,9 +1476,8 @@
         // Initialize the controller
         const controller = new TimerController();
 
-        // Settings panel functions
         function toggleSettings() {
-            if (controller.isLocked) return; // Prevent interaction if locked
+            if (controller.isLocked) return;
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('active');
         }
@@ -1288,7 +1500,7 @@
         }
 
         function testVMixConnection() {
-            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/`;
+            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/?command=`;
             
             fetch(url, {
                 method: 'GET',
@@ -1296,11 +1508,9 @@
             }).then(() => {
                 updateConnectionStatus(true);
                 console.log('vMix connection test successful');
-                // Removed alert as per general code instructions (no alert())
             }).catch(error => {
                 updateConnectionStatus(false);
                 console.error('vMix connection failed:', error);
-                // Removed alert as per general code instructions (no alert())
             });
         }
 
@@ -1318,8 +1528,12 @@
         }
 
         function resetToDefaults() {
-            if (controller.isLocked) return; // Prevent interaction if locked
-            const defaultScheme = getSchemeByName('Zinc'); // Reset to Zinc
+            if (controller.isLocked) {
+                console.log("Settings are locked. Unlock settings to reset to defaults.");
+                return;
+            }
+
+            const defaultScheme = getSchemeByName('Zinc');
             controller.applyColorScheme(defaultScheme);
             document.getElementById('timerDuration').value = 40;
             document.getElementById('timerScale').value = 1;
@@ -1334,6 +1548,12 @@
             controller.vmixIP = '127.0.0.1';
             controller.vmixPort = 8088;
             controller.micInput = 'Mic1';
+            controller.saveSettings();
+            controller.updateDisplay();
+
+            controller.isTimerControlsLocked = true; // Lock timer controls after reset
+            controller.updateLockState(); // Update the settings/reset lock UI
+            controller.updateTimerControlsLockState(); // Update the click-anywhere lock UI
             controller.saveSettings();
         }
 
@@ -1361,9 +1581,8 @@
                         const settings = JSON.parse(e.target.result);
                         window.timerSettings = settings;
                         controller.loadSettings();
-                        // Removed alert as per general code instructions (no alert())
                     } catch (error) {
-                        // Removed alert as per general code instructions (no alert())
+                        console.error('Failed to import settings:', error);
                     }
                 };
                 reader.readAsText(file);
@@ -1371,18 +1590,18 @@
             fileInput.click();
         }
 
-        // Lock/Unlock functionality
+        // Lock/Unlock functionality for the dedicated circular button
         function toggleLock() {
-            controller.isLocked = !controller.isLocked;
+            controller.isLocked = !controller.isLocked; // This toggles the settings/reset lock
             controller.updateLockState();
         }
 
         // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('settingsPanel');
-            const toggle = document.getElementById('settingsToggle'); // Use ID for consistency
+            const toggle = document.getElementById('settingsToggle'); 
             
-            if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+            if (panel.classList.contains('active') && !panel.contains(e.target) && !toggle.contains(e.target)) {
                 panel.classList.remove('active');
             }
         });
@@ -1393,7 +1612,7 @@
         // Auto-save settings periodically
         setInterval(() => {
             controller.saveSettings();
-        }, 30000); // Save every 30 seconds
+        }, 30000);
     </script>
 </body>
 </html>
