@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speaker Timer Controller</title>
     <style>
+        /* Variables for easy theme customization, from index_vmix.html */
         :root {
             --primary-color: #F05F57;
             --secondary-color: #360940;
@@ -105,7 +106,7 @@
             font-family: 'Inter', Monaco, 'Cascadia Code', monospace;
         }
 
-        /* Timer Styles */
+        /* Timer Styles from index_vmix.html */
         .timer-style-modern .timer-main {
             font-family: 'Inter', sans-serif;
             font-weight: 200;
@@ -614,6 +615,7 @@
 <body>
     <div class="background-decoration"></div>
     
+    <!-- Top Controls Section (from index_vmix.html) -->
     <div class="top-controls">
         <div class="connection-panel">
             <div class="connection-status">
@@ -640,6 +642,7 @@
 
     <div class="container">
         <div class="main-panel">
+            <!-- Timer Display Section (from index_vmix.html) -->
             <div class="timer-container">
                 <div id="timerDisplay" class="timer-display timer-style-modern">
                     <span class="timer-main">40:00</span>
@@ -653,6 +656,7 @@
                 </div>
             </div>
             
+            <!-- Control Section (from index_vmix.html) -->
             <div class="control-section">
                 <div id="micStatus" class="mic-status mic-muted">
                     <div class="mic-indicator"></div>
@@ -665,6 +669,7 @@
         </div>
     </div>
 
+    <!-- Settings Panel (from index_vmix.html) -->
     <div id="settingsPanel" class="settings-panel">
         <div class="settings-title">Settings</div>
         
@@ -763,7 +768,7 @@
     <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script>
-        // Color schemes data
+        // Color schemes data (from index_vmix.html)
         const colorSchemes = [
             { name: 'Default', primary: '#F05F57', secondary: '#360940', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Ocean', primary: '#0891b2', secondary: '#0c4a6e', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
@@ -788,7 +793,7 @@
             { name: 'Stone', primary: '#57534e', secondary: '#1c1917', accent: '#78716c', warning: '#f59e0b', danger: '#ef4444' }
         ];
 
-        // Timer Controller Class
+        // Timer Controller Class - combines logic from both versions
         class TimerController {
             constructor() {
                 this.isRunning = false;
@@ -809,12 +814,14 @@
 
             init() {
                 this.setupEventListeners();
-                this.loadSettings(); // Load settings first so vmixIP/Port are updated
+                this.loadSettings(); // Load settings first
                 this.updateDisplay();
                 this.renderColorSchemes();
                 this.setupTimerStyles();
                 // Initial connection attempt when the page loads, using loaded settings
-                this.connectToVMix(); 
+                // The actual connection logic is handled by the global `connectToVMix`
+                // which explicitly reads values from input fields for robustness.
+                connectToVMix(); 
             }
 
             setupEventListeners() {
@@ -828,19 +835,9 @@
                 timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
                 timerStyle.addEventListener('change', (e) => this.updateTimerStyle(e.target.value));
                 
-                // Add event listeners for vMix connection settings input fields
-                document.getElementById('vmixIP').addEventListener('change', (e) => {
-                    this.vmixIP = e.target.value;
-                    this.saveSettings(); // Save immediately on change
-                });
-                document.getElementById('vmixPort').addEventListener('change', (e) => {
-                    this.vmixPort = parseInt(e.target.value);
-                    this.saveSettings(); // Save immediately on change
-                });
-                document.getElementById('micInput').addEventListener('change', (e) => {
-                    this.micInputName = e.target.value;
-                    this.saveSettings(); // Save immediately on change
-                });
+                // No direct change listeners for vMix IP/Port/MicInput here.
+                // These are handled by the global `connectToVMix` function when button is clicked.
+                // This preserves the `01.html` behavior for explicit connection.
 
                 // Color inputs
                 const colorInputs = ['primaryColor', 'secondaryColor', 'accentColor', 'warningColor', 'dangerColor'];
@@ -1061,10 +1058,9 @@
                 }, 3000);
             }
 
-            // --- vMix Connection Logic (Identical to index_v01.html) ---
-            async connectToVMix() {
+            // --- vMix Connection Logic (from 01.html) ---
+            async connectToVMixInternal() { // Renamed to avoid clash with global function
                 try {
-                    // Check connection status
                     const response = await fetch(`http://${this.vmixIP}:${this.vmixPort}/api/`);
                     
                     if (response.ok) {
@@ -1087,12 +1083,11 @@
                 }
 
                 try {
-                    // This is the precise format vMix expects for its API
                     const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`;
                     const response = await fetch(url);
                     if (!response.ok) {
                         console.error(`Failed to send vMix command: ${command}, Status: ${response.status}`);
-                        this.isConnected = false; // Assume connection lost if command fails
+                        this.isConnected = false; 
                         updateConnectionStatus(false);
                         return false;
                     }
@@ -1110,17 +1105,16 @@
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    // Using micInputName here as per the original working version
                     this.sendVMixCommand(`AudioOn&Input=${this.micInputName}`); 
                 } else {
                     micStatus.className = 'mic-status mic-muted';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    // Using micInputName here as per the original working version
                     this.sendVMixCommand(`AudioOff&Input=${this.micInputName}`); 
                 }
             }
             // --- End vMix Connection Logic ---
 
+            // Save Settings (from index_vmix.html)
             saveSettings() {
                 const settings = {
                     duration: this.duration,
@@ -1149,6 +1143,7 @@
                 window.timerSettings = settings;
             }
 
+            // Load Settings (from index_vmix.html)
             loadSettings() {
                 const settings = window.timerSettings || {};
                 
@@ -1206,24 +1201,29 @@
         // Initialize the controller
         const controller = new TimerController();
 
-        // Settings panel functions
+        // Settings panel toggle (from 01.html and index_vmix.html)
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('active');
         }
 
-        // Modified connectToVMix to only update controller settings and then check connection
+        // Global functions for settings, using the 01.html method for robustness
         function connectToVMix() {
+            // Explicitly update controller properties from UI fields before connecting
             controller.vmixIP = document.getElementById('vmixIP').value;
-            // Ensure vmixPort is parsed as an integer for consistency
-            controller.vmixPort = parseInt(document.getElementById('vmixPort').value); 
-            controller.micInputName = document.getElementById('micInput').value; 
+            controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
+            controller.micInputName = document.getElementById('micInput').value;
             controller.saveSettings(); // Save updated IP, Port, MicInput
-            controller.connectToVMix(); // Call the internal method
+            controller.connectToVMixInternal(); // Call the internal method in the class
         }
 
         async function testConnection() {
-            await controller.connectToVMix(); // Call the internal method
+            // Explicitly update controller properties from UI fields before testing
+            controller.vmixIP = document.getElementById('vmixIP').value;
+            controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
+            controller.micInputName = document.getElementById('micInput').value;
+            controller.saveSettings(); // Save updated IP, Port, MicInput
+            await controller.connectToVMixInternal(); // Call the internal method
             if (controller.isConnected) {
                 showNotification('Connection successful!', true); 
             } else {
@@ -1231,7 +1231,7 @@
             }
         }
 
-        // Custom Notification function (moved from original index_v01.html)
+        // Custom Notification function (from index_vmix.html)
         function showNotification(message, isSuccess) {
             const notification = document.createElement('div');
             notification.style.cssText = `
@@ -1255,6 +1255,7 @@
             }, 3000);
         }
 
+        // Update Connection Status (from 01.html and index_vmix.html)
         function updateConnectionStatus(connected) {
             const indicator = document.getElementById('statusIndicator');
             const text = document.getElementById('connectionText');
@@ -1268,6 +1269,7 @@
             }
         }
 
+        // Reset to Defaults (from index_vmix.html)
         function resetToDefaults() {
             const defaultScheme = colorSchemes[0];
             controller.applyColorScheme(defaultScheme);
@@ -1281,12 +1283,13 @@
             controller.updateDuration(40);
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
-            controller.vmixIP = '127.0.0.1';
+            controller.vmixIP = '127.0.0.1'; // Ensure controller's internal values are also reset
             controller.vmixPort = 8088;
             controller.micInputName = 'Mic1'; 
             controller.saveSettings();
         }
 
+        // Export Settings (from index_vmix.html)
         function exportSettings() {
             const settings = window.timerSettings || {};
             const dataStr = JSON.stringify(settings, null, 2);
@@ -1299,6 +1302,7 @@
             URL.revokeObjectURL(url);
         }
 
+        // Import Settings (from index_vmix.html)
         function importSettings() {
             const fileInput = document.getElementById('importFile');
             fileInput.onchange = (e) => {
@@ -1321,7 +1325,7 @@
             fileInput.click();
         }
 
-        // Close settings panel when clicking outside
+        // Close settings panel when clicking outside (from 01.html and index_vmix.html)
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('settingsPanel');
             const toggle = document.querySelector('.settings-toggle');
@@ -1334,7 +1338,7 @@
         // Initialize connection status (will be updated by controller.checkVMixConnection on init)
         updateConnectionStatus(false);
 
-        // Auto-save settings periodically
+        // Auto-save settings periodically (from index_vmix.html)
         setInterval(() => {
             controller.saveSettings();
         }, 30000); // Save every 30 seconds
