@@ -654,13 +654,12 @@
             </div>
             
             <div class="control-section">
-                <div class="control-buttons">
-                    <button id="mainBtn" class="btn btn-primary">Start</button>
-                </div>
-                
                 <div id="micStatus" class="mic-status mic-muted">
                     <div class="mic-indicator"></div>
                     <span>Microphone Muted</span>
+                </div>
+                <div class="control-buttons">
+                    <button id="mainBtn" class="btn btn-primary">Start</button>
                 </div>
             </div>
         </div>
@@ -1113,7 +1112,7 @@
                     duration: this.duration,
                     vmixIP: this.vmixIP,
                     vmixPort: this.vmixPort,
-                    micInput: this.micInputName, // Saved as micInputName
+                    micInputName: this.micInputName, // Changed from micInput to micInputName for consistency
                     timerScale: document.documentElement.style.getPropertyValue('--timer-scale') || '1',
                     timerStyle: this.currentStyle,
                     colors: {
@@ -1142,7 +1141,7 @@
                 if (settings.duration) this.duration = settings.duration;
                 if (settings.vmixIP) this.vmixIP = settings.vmixIP;
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
-                if (settings.micInput) this.micInputName = settings.micInput; // Loaded as micInputName
+                if (settings.micInputName) this.micInputName = settings.micInputName; // Changed from micInput to micInputName for consistency
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
                 
                 // Update UI elements
