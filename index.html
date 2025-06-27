@@ -800,12 +800,13 @@
                 this.pausedTime = 0;
                 this.totalPausedTime = 0;
                 this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
-                this.vmixConnection = null;
-                this.micInput = 'Mic1';
+                // Removed vmixConnection as it will now use fetch API for commands
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
+                this.micInput = 'Mic1';
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
+                this.isConnected = false; // Added to track HTTP connection status
                 
                 this.init();
             }
@@ -816,6 +817,8 @@
                 this.updateDisplay();
                 this.renderColorSchemes();
                 this.setupTimerStyles();
+                // Initial connection attempt when the page loads
+                this.checkVMixConnection(); 
             }
 
             setupEventListeners() {
@@ -1048,24 +1051,56 @@
                 }, 3000);
             }
 
+            // --- vMix Connection Logic (Reverted to HTTP Fetch) ---
+            async checkVMixConnection() {
+                try {
+                    const response = await fetch(`http://${this.vmixIP}:${this.vmixPort}/api/`);
+                    this.isConnected = response.ok;
+                    updateConnectionStatus(this.isConnected);
+                } catch (error) {
+                    this.isConnected = false;
+                    updateConnectionStatus(false);
+                    console.error('vMix connection error:', error);
+                }
+            }
+
+            async sendVMixCommand(command) {
+                if (!this.isConnected) {
+                    console.warn('Not connected to vMix. Command not sent:', command);
+                    return false;
+                }
+                try {
+                    // Construct the command URL for vMix API
+                    const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${encodeURIComponent(command)}`;
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        console.error(`Failed to send vMix command: ${command}, Status: ${response.status}`);
+                        this.isConnected = false; // Assume connection lost if command fails
+                        updateConnectionStatus(false);
+                        return false;
+                    }
+                    return true;
+                } catch (error) {
+                    console.error('Error sending vMix command:', error);
+                    this.isConnected = false;
+                    updateConnectionStatus(false);
+                    return false;
+                }
+            }
+
             updateMicStatus(isLive) {
                 const micStatus = document.getElementById('micStatus');
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    this.sendVMixCommand(`FUNCTION Audio ${this.micInput}`);
+                    this.sendVMixCommand(`AudioOn&Input=${this.micInput}`); // Changed command format
                 } else {
                     micStatus.className = 'mic-status mic-muted';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    this.sendVMixCommand(`FUNCTION AudioOff ${this.micInput}`);
+                    this.sendVMixCommand(`AudioOff&Input=${this.micInput}`); // Changed command format
                 }
             }
-
-            sendVMixCommand(command) {
-                if (this.vmixConnection && this.vmixConnection.readyState === WebSocket.OPEN) {
-                    this.vmixConnection.send(command);
-                }
-            }
+            // --- End vMix Connection Logic ---
 
             saveSettings() {
                 const settings = {
@@ -1158,55 +1193,48 @@
             panel.classList.toggle('active');
         }
 
+        // Modified connectToVMix to only update controller settings and then check connection
         function connectToVMix() {
-            const ip = document.getElementById('vmixIP').value;
-            const port = document.getElementById('vmixPort').value;
-            const micInput = document.getElementById('micInput').value;
-            
-            controller.vmixIP = ip;
-            controller.vmixPort = port;
-            controller.micInput = micInput;
-            
-            // Close existing connection
-            if (controller.vmixConnection) {
-                controller.vmixConnection.close();
-            }
-            
-            // Create new WebSocket connection
-            try {
-                controller.vmixConnection = new WebSocket(`ws://${ip}:${port}`);
-                
-                controller.vmixConnection.onopen = () => {
-                    updateConnectionStatus(true);
-                    console.log('Connected to vMix');
-                };
-                
-                controller.vmixConnection.onclose = () => {
-                    updateConnectionStatus(false);
-                    console.log('Disconnected from vMix');
-                };
-                
-                controller.vmixConnection.onerror = (error) => {
-                    updateConnectionStatus(false);
-                    console.error('vMix connection error:', error);
-                };
-            } catch (error) {
-                updateConnectionStatus(false);
-                console.error('Failed to connect to vMix:', error);
-            }
-            
-            controller.saveSettings();
+            controller.vmixIP = document.getElementById('vmixIP').value;
+            controller.vmixPort = document.getElementById('vmixPort').value;
+            controller.micInput = document.getElementById('micInput').value;
+            controller.saveSettings(); // Save updated IP, Port, MicInput
+            controller.checkVMixConnection(); // Check connection with new settings
         }
 
-        function testConnection() {
-            connectToVMix();
+        async function testConnection() {
+            await controller.checkVMixConnection(); // Use the controller's checkVMixConnection
+            if (controller.isConnected) {
+                // Replaced alert with a custom notification for better UX
+                showNotification('Connection successful!', true); 
+            } else {
+                // Replaced alert with a custom notification
+                showNotification('Connection failed. Please check your settings.', false);
+            }
+        }
+
+        // Custom Notification function (moved from original index_v01.html)
+        function showNotification(message, isSuccess) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: ${isSuccess ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'};
+                color: white;
+                padding: 16px 24px;
+                border-radius: 12px;
+                font-weight: 500;
+                z-index: 1000;
+                backdrop-filter: blur(10px);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
             setTimeout(() => {
-                if (controller.vmixConnection && controller.vmixConnection.readyState === WebSocket.OPEN) {
-                    alert('Connection successful!');
-                } else {
-                    alert('Connection failed. Please check your settings.');
-                }
-            }, 2000);
+                notification.remove();
+            }, 3000);
         }
 
         function updateConnectionStatus(connected) {
@@ -1265,9 +1293,9 @@
                         const settings = JSON.parse(e.target.result);
                         window.timerSettings = settings;
                         controller.loadSettings();
-                        alert('Settings imported successfully!');
+                        showNotification('Settings imported successfully!', true); // Replaced alert
                     } catch (error) {
-                        alert('Failed to import settings. Please check the file format.');
+                        showNotification('Failed to import settings. Please check the file format.', false); // Replaced alert
                     }
                 };
                 reader.readAsText(file);
@@ -1285,7 +1313,7 @@
             }
         });
 
-        // Initialize connection status
+        // Initialize connection status (will be updated by controller.checkVMixConnection on init)
         updateConnectionStatus(false);
 
         // Auto-save settings periodically
