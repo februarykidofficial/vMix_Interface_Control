@@ -333,11 +333,12 @@
             top: 30px;
             right: 30px;
             display: flex;
+            flex-direction: column; /* Changed to column for stacking panels */
             gap: 15px;
             z-index: 100;
         }
 
-        .connection-panel {
+        .connection-panel-top { /* New class for the top-right connection panel */
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(15px);
             border-radius: 12px;
@@ -397,6 +398,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            /* position: fixed; moved to top-controls for stacking */
         }
 
         .settings-toggle:hover {
@@ -417,6 +419,7 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             color: var(--danger-color);
+            /* position: fixed; moved to top-controls for stacking */
         }
 
         .reset-btn:hover {
@@ -424,9 +427,36 @@
             transform: scale(1.05);
         }
 
-        .settings-panel {
+        /* New panel for connection settings */
+        #connectionSettingsPanel {
             position: fixed;
-            top: 100px;
+            top: 100px; /* Below the connection status */
+            right: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 400px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 99;
+        }
+        #connectionSettingsPanel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Existing settings panel for general/display settings */
+        #displaySettingsPanel {
+            position: fixed;
+            bottom: 100px; /* Moved to bottom right */
             right: 30px;
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
@@ -444,11 +474,12 @@
             z-index: 99;
         }
 
-        .settings-panel.active {
+        #displaySettingsPanel.active {
             transform: translateY(0);
             opacity: 1;
             visibility: visible;
         }
+
 
         .settings-title {
             font-size: 1.2rem;
@@ -618,12 +649,18 @@
                 flex-direction: column;
             }
 
-            .settings-panel {
+            #connectionSettingsPanel,
+            #displaySettingsPanel {
                 right: 10px;
                 left: 10px;
-                top: 120px;
                 min-width: auto;
                 max-width: none;
+            }
+            #connectionSettingsPanel {
+                 top: 120px;
+            }
+            #displaySettingsPanel {
+                bottom: 80px;
             }
 
             .color-schemes {
@@ -636,7 +673,7 @@
     <div class="background-decoration"></div>
     
     <div class="top-controls">
-        <div class="connection-panel">
+        <div class="connection-panel-top">
             <div class="connection-status">
                 <div id="statusIndicator" class="status-indicator"></div>
                 <span id="connectionText">vMix Connection</span>
@@ -656,7 +693,12 @@
             </svg>
         </div>
         
-        <div class="settings-toggle" onclick="toggleSettings()">
+        <div class="settings-toggle" onclick="toggleConnectionSettings()" title="Connection Settings">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+        </div>
+        <div class="settings-toggle" onclick="toggleDisplaySettings()" title="Display Settings">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
@@ -692,27 +734,35 @@
         </div>
     </div>
 
-    <div id="settingsPanel" class="settings-panel">
-        <div class="settings-title">Settings</div>
+    <!-- Connection Settings Panel -->
+    <div id="connectionSettingsPanel" class="settings-panel">
+        <div class="settings-title">Connection Settings</div>
         
-        <div class="settings-section">
-            <h3>Connection</h3>
-            <div class="settings-row">
-                <label>vMix IP Address</label>
-                <input type="text" id="vmixIP" value="127.0.0.1" placeholder="192.168.1.100">
-            </div>
-            
-            <div class="settings-row">
-                <label>vMix Port</label>
-                <input type="number" id="vmixPort" value="8088" placeholder="8088">
-            </div>
-            
-            <div class="settings-row">
-                <label>Microphone Input Name</label>
-                <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
-            </div>
+        <div class="settings-row">
+            <label>vMix IP Address</label>
+            <input type="text" id="vmixIP" value="127.0.0.1" placeholder="192.168.1.100">
         </div>
+        
+        <div class="settings-row">
+            <label>vMix Port</label>
+            <input type="number" id="vmixPort" value="8088" placeholder="8088">
+        </div>
+        
+        <div class="settings-row">
+            <label>Microphone Input Name</label>
+            <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
+        </div>
+        
+        <div class="settings-buttons">
+            <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
+            <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
+        </div>
+    </div>
 
+    <!-- Display Settings Panel -->
+    <div id="displaySettingsPanel" class="settings-panel">
+        <div class="settings-title">Display Settings</div>
+        
         <div class="settings-section">
             <h3>Timer Settings</h3>
             <div class="settings-row">
@@ -775,8 +825,6 @@
         </div>
         
         <div class="settings-buttons">
-            <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
-            <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
             <button class="btn btn-warning btn-small" onclick="resetToDefaults()">Reset to Defaults</button>
             <button class="btn btn-secondary btn-small" onclick="exportSettings()">Export Settings</button>
             <button class="btn btn-secondary btn-small" onclick="importSettings()">Import Settings</button>
@@ -1088,40 +1136,32 @@
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    this.sendVMixCommand(`FUNCTION Audio ${this.micInput}`);
+                    this.sendVMixCommand(`AudioOn&Input=${this.micInput}`);
                 } else {
                     micStatus.className = 'mic-status mic-muted';
                     micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    this.sendVMixCommand(`FUNCTION AudioOff ${this.micInput}`);
+                    this.sendVMixCommand(`AudioOff&Input=${this.micInput}`);
                 }
             }
 
             sendVMixCommand(command) {
-                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?${command}`;
+                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`; // Corrected API command structure
                 // Update debug info
                 updateDebugInfo('Sending command...', command, url);
 
-                // Try with credentials first (for same-origin)
-                fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' }).then(response => {
-                    if (response.ok) {
-                        console.log('vMix command sent successfully:', command);
-                        updateConnectionStatus(true);
-                        updateDebugInfo('✅ Command sent successfully', command, url);
-                    } else {
-                        console.warn('vMix command sent but got non-200 response:', response.status);
-                        updateDebugInfo(`⚠️ Response: HTTP ${response.status}`, command, url);
-                    }
-                }).catch(error => {
-                    console.log('CORS failed, trying no-cors mode for command:', command);
-                    updateDebugInfo('CORS failed, trying no-cors...', command, url);
-                    // Fallback to no-cors mode
-                    fetch(url, { method: 'GET', mode: 'no-cors' }).then(() => {
-                        updateDebugInfo('⚠️ Sent via no-cors mode', command, url);
-                    }).catch(e => {
-                        console.error('vMix command failed completely:', e);
-                        updateConnectionStatus(false);
-                        updateDebugInfo('❌ Command failed', command, url);
-                    });
+                // Use no-cors mode for vMix commands
+                fetch(url, { method: 'GET', mode: 'no-cors' }).then(() => {
+                    console.log('vMix command sent (no-cors mode):', command);
+                    updateDebugInfo('✅ Command sent (no-cors)', command, url);
+                    // In no-cors mode, we can't get a direct success/fail response,
+                    // so we assume it was sent. Update status to connected if successful,
+                    // but don't change to disconnected on error here, let testConnection handle that.
+                    updateConnectionStatus(true); 
+                }).catch(e => {
+                    console.error('vMix command failed:', e);
+                    updateDebugInfo('❌ Command failed', command, url);
+                    // We don't change connection status here, as this is for individual commands.
+                    // The testConnection function is responsible for overall connection status.
                 });
             }
 
@@ -1210,13 +1250,22 @@
         // Initialize the controller
         const controller = new TimerController();
 
-        // Settings panel functions
-        function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
+        // Separate settings panel toggles
+        function toggleConnectionSettings() {
+            const panel = document.getElementById('connectionSettingsPanel');
             panel.classList.toggle('active');
+            // Ensure other panel is closed
+            document.getElementById('displaySettingsPanel').classList.remove('active');
         }
 
-        // Connect to vMix function
+        function toggleDisplaySettings() {
+            const panel = document.getElementById('displaySettingsPanel');
+            panel.classList.toggle('active');
+            // Ensure other panel is closed
+            document.getElementById('connectionSettingsPanel').classList.remove('active');
+        }
+
+        // Connect to vMix function (called from connection panel)
         function connectToVMix() {
             const ip = document.getElementById('vmixIP').value;
             const port = document.getElementById('vmixPort').value;
@@ -1226,54 +1275,42 @@
             controller.vmixPort = port;
             controller.micInput = micInput;
             
-            // Test connection with a simple API call
             testVMixConnection();
             controller.saveSettings();
         }
             
-        // Test connection function
+        // Test connection function (called from connection panel)
         function testConnection() {
             testVMixConnection();
         }
 
-        // New function to test vMix connection more robustly
+        // Function to test vMix connection robustly
         function testVMixConnection() {
-            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/`;
-            updateDebugInfo('Testing connection...', 'N/A', url);
+            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/?Function=Blank`; // Sending a harmless Blank command
+            updateDebugInfo('Testing connection...', 'Blank', url);
 
             fetch(url, {
                 method: 'GET',
-                mode: 'cors', // Try cors mode first to get a proper response status
-                credentials: 'omit'
-            }).then(response => {
-                if (response.ok) {
-                    updateConnectionStatus(true);
-                    updateDebugInfo('✅ Connection test successful', 'N/A', url);
-                    // Use a custom message box instead of alert
-                    showMessageBox('Connection Test', 'Connection test sent to vMix. Check vMix for confirmation.', 'success');
-                } else {
-                    updateConnectionStatus(false);
-                    updateDebugInfo(`⚠️ Connection test responded with HTTP ${response.status}`, 'N/A', url);
-                    // Use a custom message box instead of alert
-                    showMessageBox('Connection Test', `Connection test failed. vMix responded with status ${response.status}. Please check your vMix IP and port settings.`, 'error');
-                }
+                mode: 'no-cors' // Use no-cors for initial connection test to bypass CORS issues.
+            }).then(() => {
+                updateConnectionStatus(true);
+                updateDebugInfo('✅ Connection test sent (no-cors)', 'Blank', url);
+                showMessageBox('Connection Test', 
+                    `Connection test command sent to vMix at ${controller.vmixIP}:${controller.vmixPort}. ` +
+                    `This indicates the network link is open. Please check vMix to confirm receipt (e.g., if any input changed).`, 
+                    'success');
             }).catch(error => {
-                // If CORS fails, try no-cors. For testing, a successful no-cors fetch still means something got sent.
-                fetch(url, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                }).then(() => {
-                    updateConnectionStatus(true); // Assume success if no-cors doesn't error
-                    updateDebugInfo('⚠️ Connection test sent (no-cors fallback)', 'N/A', url);
-                    // Use a custom message box instead of alert
-                    showMessageBox('Connection Test', 'Connection test sent via no-cors mode. Check vMix for confirmation. (Cannot verify direct response)', 'warning');
-                }).catch(e => {
-                    updateConnectionStatus(false);
-                    updateDebugInfo('❌ Connection test failed completely', 'N/A', url);
-                    console.error('vMix connection failed:', e);
-                    // Use a custom message box instead of alert
-                    showMessageBox('Connection Test', 'Connection failed completely. Please check your vMix IP and port settings and ensure vMix is running and accessible.', 'error');
-                });
+                updateConnectionStatus(false);
+                updateDebugInfo('❌ Connection test failed completely', 'Blank', url);
+                console.error('vMix connection failed:', error);
+                showMessageBox('Connection Failed',
+                    `Could not reach vMix at ${controller.vmixIP}:${controller.vmixPort}. Please check the following:\n\n` +
+                    `1. Is vMix running on the specified IP address and port?\n` +
+                    `2. Is the vMix Web API enabled in vMix settings? (Go to Settings -> Web Controller)\n` +
+                    `3. Is there a firewall blocking the connection on your computer or network?\n` +
+                    `4. Is the IP address correct and accessible from where you are running this page? (e.g., same local network if using private IP)`,
+                    'error'
+                );
             });
         }
 
@@ -1296,15 +1333,16 @@
             document.getElementById('timerDuration').value = 40;
             document.getElementById('timerScale').value = 1;
             document.getElementById('timerStyle').value = 'modern';
-            document.getElementById('vmixIP').value = '127.0.0.1';
-            document.getElementById('vmixPort').value = 8088;
-            document.getElementById('micInput').value = 'Mic1';
+            // Do not reset vMix IP/Port here, as those are connection specific and user might want to keep them.
+            // document.getElementById('vmixIP').value = '127.0.0.1';
+            // document.getElementById('vmixPort').value = 8088;
+            document.getElementById('micInput').value = 'Mic1'; // Reset mic input name
             
             controller.updateDuration(40);
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
-            controller.vmixIP = '127.0.0.1';
-            controller.vmixPort = 8088;
+            // controller.vmixIP = '127.0.0.1'; // Don't reset from here
+            // controller.vmixPort = 8088; // Don't reset from here
             controller.micInput = 'Mic1';
             controller.saveSettings();
         }
@@ -1387,12 +1425,14 @@
             `;
 
             const messageElem = document.createElement('p');
+            // Use white-space: pre-wrap to render newlines from the message string
             messageElem.textContent = message;
             messageElem.style.cssText = `
                 margin-bottom: 25px;
                 font-size: 1.1rem;
                 line-height: 1.5;
                 color: rgba(255, 255, 255, 0.9);
+                white-space: pre-wrap;
             `;
 
             const closeButton = document.createElement('button');
@@ -1432,15 +1472,27 @@
             }, 10);
         }
 
-        // Close settings panel when clicking outside
+        // Close settings panels when clicking outside
         document.addEventListener('click', (e) => {
-            const panel = document.getElementById('settingsPanel');
-            const toggle = document.querySelector('.settings-toggle');
+            const connectionPanel = document.getElementById('connectionSettingsPanel');
+            const displayPanel = document.getElementById('displaySettingsPanel');
+            const toggleButtons = document.querySelectorAll('.settings-toggle'); // Select all toggle buttons
             
-            if (panel && toggle && !panel.contains(e.target) && !toggle.contains(e.target)) {
-                panel.classList.remove('active');
+            let clickedInsideAnyPanel = false;
+            if (connectionPanel && connectionPanel.contains(e.target)) clickedInsideAnyPanel = true;
+            if (displayPanel && displayPanel.contains(e.target)) clickedInsideAnyPanel = true;
+
+            let clickedOnToggleButton = false;
+            toggleButtons.forEach(button => {
+                if (button.contains(e.target)) clickedOnToggleButton = true;
+            });
+
+            if (!clickedInsideAnyPanel && !clickedOnToggleButton) {
+                if (connectionPanel) connectionPanel.classList.remove('active');
+                if (displayPanel) displayPanel.classList.remove('active');
             }
         });
+
 
         // Initialize connection status
         updateConnectionStatus(false);
