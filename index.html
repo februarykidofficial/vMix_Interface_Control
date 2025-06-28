@@ -844,10 +844,9 @@
                 this.pausedTime = 0;
                 this.totalPausedTime = 0;
                 this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
-                this.vmixConnection = null;
-                this.micInput = 'Mic1';
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
+                this.micInput = 'Mic1';
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
                 this.isLocked = true; // State for settings/reset (controlled by circular lock button)
@@ -855,17 +854,13 @@
                 this.isFlashing = false; // State for flashing colors
                 this.flashInterval = null; // Interval ID for flashing
                 this.flashColorToggle = false; // Toggle between Amber (true) and Lime (false)
+                this.isConnectedToVMix = false; // Track actual vMix connection status
                 
                 // For 3-click unlock functionality
                 this.unlockClickCount = 0; // Tracks consecutive clicks for unlock
                 this.lastClickTimestamp = 0; // Timestamp of the last click
                 this.consecutiveClickThreshold = 500; // Max time between clicks to be considered "consecutive" (0.5 seconds)
                 this.requiredClicksToUnlock = 3; // Number of clicks to unlock
-
-                // Zoom functionality related properties removed
-                // this.isHoldingForZoomOut = false;
-                // this.zoomOutHoldTimeout = null;
-                // this.zoomOutMinHoldDuration = 4000; // 4 seconds
 
                 this.init();
             }
@@ -879,14 +874,14 @@
                 // Ensure lock states are updated on init based on loaded settings
                 this.updateLockState(); 
                 this.updateTimerControlsLockState(); 
+                // Initial vMix connection check
+                this.testVMixConnection(); 
             }
 
             setupEventListeners() {
                 const timerDuration = document.getElementById('timerDuration');
                 const timerScale = document.getElementById('timerScale');
                 const timerStyle = document.getElementById('timerStyle');
-                // Removed lockButton event listener for zoom functionality
-                // const lockButton = document.getElementById('lockButton'); 
 
                 timerDuration.addEventListener('change', (e) => this.updateDuration(e.target.value));
                 timerScale.addEventListener('input', (e) => this.updateScale(e.target.value));
@@ -902,14 +897,6 @@
                 document.body.addEventListener('click', this.handleGlobalInteraction.bind(this));
                 // Global keydown for spacebar interaction (also using the unified handler)
                 document.body.addEventListener('keydown', this.handleGlobalInteraction.bind(this));
-
-                // Removed global hold listeners for zoom out
-                // document.body.addEventListener('mousedown', this.handleGlobalHoldStart.bind(this));
-                // document.body.addEventListener('mouseup', this.handleGlobalHoldEnd.bind(this));
-                // document.body.addEventListener('touchstart', this.handleGlobalHoldStart.bind(this));
-                // document.body.addEventListener('touchend', this.handleGlobalHoldEnd.bind(this));
-
-                // The lock button itself still has its original toggleLock functionality via onclick directly in HTML
             }
 
             // Helper to check if event target is an explicitly excluded element
@@ -1072,7 +1059,8 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Lime'));
                 
-                this.updateMicStatus(true);
+                // Correct vMix command for audio ON
+                this.updateMicStatus(true); 
                 this.animateTimer();
                 this.saveSettings();
             }
@@ -1085,6 +1073,7 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Red'));
                 
+                // Correct vMix command for audio OFF
                 this.updateMicStatus(false);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
@@ -1100,6 +1089,7 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Lime'));
                 
+                // Correct vMix command for audio ON
                 this.updateMicStatus(true);
                 this.animateTimer();
                 this.saveSettings();
@@ -1120,6 +1110,7 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Zinc'));
                 
+                // Correct vMix command for audio OFF
                 this.updateMicStatus(false);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
@@ -1232,28 +1223,75 @@
                 }, 3000);
             }
 
-            updateMicStatus(isLive) {
-                const micStatus = document.getElementById('micStatus');
-                if (isLive) {
-                    micStatus.className = 'mic-status mic-live';
-                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    this.sendVMixCommand(`FUNCTION Audio ${this.micInput}`);
-                } else {
-                    micStatus.className = 'mic-status mic-muted';
-                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    this.sendVMixCommand(`FUNCTION AudioOff ${this.micInput}`);
+            // Corrected vMix command sending
+            async sendVMixCommand(command) {
+                if (!this.isConnectedToVMix) {
+                    console.warn("Not connected to vMix. Command not sent:", command);
+                    return false;
+                }
+                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`;
+                
+                try {
+                    // Removed mode: 'no-cors' to allow response checking
+                    const response = await fetch(url, { method: 'GET' }); 
+                    if (!response.ok) {
+                        console.error(`vMix command failed for ${command}: HTTP Status ${response.status}`);
+                        return false;
+                    }
+                    console.log(`vMix command sent successfully: ${command}`);
+                    return true;
+                } catch (error) {
+                    console.error(`Error sending vMix command ${command}:`, error);
+                    // Assume connection lost if there's a fetch error
+                    this.isConnectedToVMix = false; 
+                    updateConnectionStatus(false); // Update global status
+                    return false;
                 }
             }
 
-            sendVMixCommand(command) {
-                const url = `http://${this.vmixIP}:${this.vmixPort}/api/?${command}`;
+            // Corrected updateMicStatus to use proper vMix API commands
+            async updateMicStatus(isLive) {
+                const micStatus = document.getElementById('micStatus');
+                let commandSent = false;
+                if (isLive) {
+                    micStatus.className = 'mic-status mic-live';
+                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
+                    commandSent = await this.sendVMixCommand(`AudioOn&Input=${this.micInput}`);
+                } else {
+                    micStatus.className = 'mic-status mic-muted';
+                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
+                    commandSent = await this.sendVMixCommand(`AudioOff&Input=${this.micInput}`);
+                }
+                // Optional: show a notification if mic command failed
+                if (!commandSent && this.isConnectedToVMix) {
+                    // Only show if we think we are connected, but command still failed.
+                    // If not connected, the generic "vMix Disconnected" message is enough.
+                    this.showNotification(`Failed to send vMix mic command. Check Input Name: ${this.micInput}`, false);
+                }
+            }
+
+            // Simple notification function (from 01.html)
+            showNotification(message, isSuccess) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: ${isSuccess ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'};
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    font-weight: 500;
+                    z-index: 1000;
+                    backdrop-filter: blur(10px);
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
                 
-                fetch(url, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                }).catch(error => {
-                    console.log('vMix command sent (no-cors mode):', command);
-                });
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
             }
 
             saveSettings() {
@@ -1399,6 +1437,30 @@
                 }
                 this.saveSettings();
             }
+
+            // NEW: Connection test method, similar to 01.html's connectToVMix
+            async testVMixConnection() {
+                const url = `http://${this.vmixIP}:${this.vmixPort}/api/`; // Test basic API endpoint
+                
+                try {
+                    // Removed mode: 'no-cors' to correctly check response.ok
+                    const response = await fetch(url, { method: 'GET' }); 
+                    this.isConnectedToVMix = response.ok;
+                    updateConnectionStatus(this.isConnectedToVMix);
+                    if (this.isConnectedToVMix) {
+                        console.log('vMix connection test successful');
+                        this.showNotification('Connected to vMix successfully!', true);
+                    } else {
+                        console.error(`vMix connection failed: HTTP Status ${response.status}`);
+                        this.showNotification(`Failed to connect to vMix. Status: ${response.status}`, false);
+                    }
+                } catch (error) {
+                    this.isConnectedToVMix = false;
+                    updateConnectionStatus(false);
+                    console.error('vMix connection failed:', error);
+                    this.showNotification('Failed to connect to vMix. Check IP/Port and vMix running.', false);
+                }
+            }
         }
 
         // Initialize the controller
@@ -1411,37 +1473,23 @@
         }
 
         function connectToVMix() {
-            const ip = document.getElementById('vmixIP').value;
-            const port = document.getElementById('vmixPort').value;
-            const micInput = document.getElementById('micInput').value;
+            // Update controller's properties first
+            controller.vmixIP = document.getElementById('vmixIP').value;
+            controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
+            controller.micInput = document.getElementById('micInput').value;
             
-            controller.vmixIP = ip;
-            controller.vmixPort = port;
-            controller.micInput = micInput;
-            
-            testVMixConnection();
+            // Then run the connection test using the controller's method
+            controller.testVMixConnection();
             controller.saveSettings();
         }
             
         function testConnection() {
-            testVMixConnection();
+            // Use the controller's test method directly
+            controller.testVMixConnection();
         }
 
-        function testVMixConnection() {
-            const url = `http://${controller.vmixIP}:${controller.vmixPort}/api/?command=`;
-            
-            fetch(url, {
-                method: 'GET',
-                mode: 'no-cors'
-            }).then(() => {
-                updateConnectionStatus(true);
-                console.log('vMix connection test successful');
-            }).catch(error => {
-                updateConnectionStatus(false);
-                console.error('vMix connection failed:', error);
-            });
-        }
-
+        // Renamed global testVMixConnection to avoid conflict with class method and updated its role
+        // This function only handles updating the UI connection status
         function updateConnectionStatus(connected) {
             const indicator = document.getElementById('statusIndicator');
             const text = document.getElementById('connectionText');
@@ -1533,9 +1581,6 @@
                 panel.classList.remove('active');
             }
         });
-
-        // Initialize connection status
-        updateConnectionStatus(false);
 
         // Auto-save settings periodically
         setInterval(() => {
