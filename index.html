@@ -52,14 +52,6 @@
             position: relative;
         }
 
-        .background-decoration {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
-        }
-
         .background-decoration::before {
             content: '';
             position: absolute;
@@ -801,7 +793,7 @@
             <h3>Timer Settings</h3>
             <div class="settings-row">
                 <label>Timer Duration (minutes)</label>
-                <input type="number" id="timerDuration" value="40" min="1" max="180">
+                <input type="number" id="timerDuration" value="30" min="1" max="180">
             </div>
             
             <div class="settings-row">
@@ -918,7 +910,7 @@
                 this.startTime = 0;
                 this.pausedTime = 0;
                 this.totalPausedTime = 0;
-                this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
+                this.duration = 30 * 60 * 1000; // 30 minutes in milliseconds (changed from 40)
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
                 this.micInputNumber = 1; // Renamed from videoInputNumber to micInputNumber
@@ -1639,7 +1631,7 @@
 
             const defaultScheme = getSchemeByName('Zinc');
             controller.applyColorScheme(defaultScheme);
-            document.getElementById('timerDuration').value = 40;
+            document.getElementById('timerDuration').value = 30; // Changed default to 30
             document.getElementById('timerScale').value = 1;
             document.getElementById('timerStyle').value = 'modern';
             document.getElementById('vmixIP').value = '127.0.0.1';
@@ -1647,7 +1639,7 @@
             document.getElementById('micInputNumber').value = 1; // Changed to mic input
             document.getElementById('timerInputNumber').value = 2; // Changed to timer input
             
-            controller.updateDuration(40);
+            controller.updateDuration(30); // Changed default to 30
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
             controller.vmixIP = '127.0.0.1';
