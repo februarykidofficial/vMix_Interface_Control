@@ -201,11 +201,11 @@
 
         .progress-pointer {
             position: absolute;
-            right: calc(-6px * var(--timer-scale));
+            right: calc(-9px * var(--timer-scale)); /* Adjusted for larger pointer */
             top: 50%;
             transform: translateY(-50%);
-            width: calc(12px * var(--timer-scale));
-            height: calc(12px * var(--timer-scale));
+            width: calc(18px * var(--timer-scale)); /* Made pointer bigger */
+            height: calc(18px * var(--timer-scale)); /* Made pointer bigger */
             background: var(--text-color);
             border-radius: 50%;
             box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
@@ -602,8 +602,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--glass-bg); /* Use glass background for full screen shadow effect */
-            backdrop-filter: blur(20px); /* Apply the blur to the entire overlay */
+            background: rgba(0, 0, 0, 0.8); /* Changed to semi-transparent black for clarity */
+            backdrop-filter: none; /* Removed blur */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -739,7 +739,7 @@
 
             <div class="timer-container">
                 <div id="timerDisplay" class="timer-display timer-style-modern">
-                    <span class="timer-main">40:00</span>
+                    <span class="timer-main">30:00</span>
                     <span class="timer-ms">.000</span>
                 </div>
                 
