@@ -286,17 +286,18 @@
             font-weight: 500;
         }
 
+        /* Fixed colors for status indicator */
         .status-indicator {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--danger-color);
-            box-shadow: 0 0 8px var(--danger-color);
+            background: #ef4444; /* Red for disconnected */
+            box-shadow: 0 0 8px #ef4444; 
         }
 
         .status-indicator.connected {
-            background: var(--accent-color);
-            box-shadow: 0 0 8px var(--accent-color);
+            background: #10b981; /* Green for connected */
+            box-shadow: 0 0 8px #10b981;
         }
 
         .settings-toggle {
@@ -430,6 +431,74 @@
             gap: 10px;
             margin-top: 20px;
             flex-wrap: wrap;
+        }
+
+        /* Re-applied fixed colors for buttons in settings panel, matching 01.html */
+        .btn {
+            padding: 18px 36px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            min-width: 140px;
+            color: white; /* Ensure text is white */
+        }
+
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover:before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Specific button colors from 01.html */
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            box-shadow: 0 8px 24px rgba(107, 114, 128, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn:disabled:hover {
+            transform: none;
         }
 
         .btn-small {
@@ -718,6 +787,11 @@
                 <label>Microphone Input Name</label>
                 <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
             </div>
+            <!-- Moved Connect and Test buttons here -->
+            <div class="settings-buttons">
+                <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
+                <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
+            </div>
         </div>
 
         <div class="settings-section">
@@ -782,8 +856,6 @@
         </div>
         
         <div class="settings-buttons">
-            <button class="btn btn-primary btn-small" onclick="connectToVMix()">Connect</button>
-            <button class="btn btn-secondary btn-small" onclick="testConnection()">Test</button>
             <button class="btn btn-warning btn-small" onclick="resetToDefaults()">Reset to Defaults</button>
             <button class="btn btn-secondary btn-small" onclick="exportSettings()">Export Settings</button>
             <button class="btn btn-secondary btn-small" onclick="importSettings()">Import Settings</button>
