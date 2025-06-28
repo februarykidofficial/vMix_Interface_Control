@@ -946,8 +946,8 @@
                 // Ensure lock states are updated on init based on loaded settings
                 this.updateLockState(); 
                 this.updateTimerControlsLockState(); 
-                // Initial vMix connection check
-                this.testVMixConnection(); 
+                // Removed initial vMix connection check on page load to prevent immediate error
+                // this.testVMixConnection(); 
             }
 
             setupEventListeners() {
@@ -965,7 +965,9 @@
                     document.getElementById(id).addEventListener('change', (e) => this.updateColor(id, e.target.value));
                 });
 
-                // Attach a single global click listener to the body for both unlock and timer toggle
+                // Attach a single global click/touch listener to the body for both unlock and timer toggle
+                // The 'click' event generally works for single taps on touch devices.
+                // For more complex touch gestures (e.g., drag, swipe), additional touchstart/touchmove/touchend listeners would be needed.
                 document.body.addEventListener('click', this.handleGlobalInteraction.bind(this));
                 // Global keydown for spacebar interaction (also using the unified handler)
                 document.body.addEventListener('keydown', this.handleGlobalInteraction.bind(this));
