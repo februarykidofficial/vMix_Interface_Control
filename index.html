@@ -42,6 +42,11 @@
             cursor: pointer;
         }
 
+        /* NEW: Class for body pulse animation */
+        body.body-pulse-red {
+            animation: pulse-red 1s ease-in-out 3;
+        }
+
         .container {
             display: flex;
             flex-direction: column;
@@ -50,6 +55,14 @@
             min-height: 100vh;
             padding: 40px 20px;
             position: relative;
+        }
+
+        .background-decoration {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
         }
 
         .background-decoration::before {
@@ -602,7 +615,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8); /* Changed to semi-transparent black for clarity */
+            background: transparent; /* Changed to transparent */
             backdrop-filter: none; /* Removed blur */
             display: flex;
             flex-direction: column;
@@ -1300,9 +1313,9 @@
                 this.updateMicrophoneStatus(false);
                 this.clearFlashing();
                 
-                document.body.style.animation = 'pulse-red 1s ease-in-out 3';
+                document.body.classList.add('body-pulse-red'); /* Added new class */
                 setTimeout(() => {
-                    document.body.style.animation = '';
+                    document.body.classList.remove('body-pulse-red'); /* Removed new class */
                     this.updateBodyColors(getSchemeByName('Zinc'));
                     this.isTimerControlsLocked = true; // Lock timer controls after expiration
                     this.updateTimerControlsLockState();
