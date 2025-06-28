@@ -190,9 +190,9 @@
 
         .progress-container {
             width: 100%;
-            height: calc(8px * var(--timer-scale));
+            height: calc(12px * var(--timer-scale)); /* Adjusted height */
             background: rgba(255, 255, 255, 0.15);
-            border-radius: calc(4px * var(--timer-scale));
+            border-radius: calc(6px * var(--timer-scale)); /* Adjusted border-radius */
             margin: calc(30px * var(--timer-scale)) 0;
             overflow: visible;
             position: relative;
@@ -201,7 +201,7 @@
         .progress-bar {
             height: 100%;
             background: linear-gradient(90deg, var(--accent-color), #059669);
-            border-radius: calc(4px * var(--timer-scale));
+            border-radius: calc(6px * var(--timer-scale)); /* Adjusted border-radius */
             transition: width 0.1s linear; 
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
             position: relative;
@@ -300,7 +300,7 @@
             box-shadow: 0 0 8px #10b981;
         }
 
-        .settings-toggle {
+        .settings-toggle, .reset-btn, .fullscreen-toggle {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
@@ -313,31 +313,24 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             pointer-events: auto; 
+            color: var(--text-color); /* Default color for icons */
         }
 
-        .settings-toggle:hover {
+        .settings-toggle:hover, .fullscreen-toggle:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: rotate(90deg);
         }
 
         .reset-btn {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 50%;
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
             color: var(--danger-color);
-            pointer-events: auto; 
         }
 
         .reset-btn:hover {
             background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.05);
+        }
+
+        .fullscreen-toggle:hover {
             transform: scale(1.05);
         }
 
@@ -737,6 +730,12 @@
                 <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
             </svg>
         </div>
+        <!-- Fullscreen Toggle Button -->
+        <div id="fullscreenToggle" class="fullscreen-toggle" onclick="toggleFullscreen()">
+            <svg id="fullscreenIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-maximize">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+        </div>
     </div>
 
     <div class="container">
@@ -784,8 +783,12 @@
             </div>
             
             <div class="settings-row">
-                <label>Microphone Input Name</label>
-                <input type="text" id="micInput" value="Mic1" placeholder="Audio Input Name">
+                <label>Microphone Input Number</label>
+                <input type="number" id="micInputNumber" value="1" min="1" placeholder="1">
+            </div>
+            <div class="settings-row">
+                <label>Timer Input Number (Title Editor)</label>
+                <input type="number" id="timerInputNumber" value="2" min="1" placeholder="2">
             </div>
             <!-- Moved Connect and Test buttons here -->
             <div class="settings-buttons">
@@ -889,7 +892,7 @@
             { name: 'Indigo', primary: '#4f46e5', secondary: '#312e81', accent: '#6366f1', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Teal', primary: '#0d9488', secondary: '#134e4a', accent: '#14b8a6', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Red', primary: '#dc2626', secondary: '#7f1d1d', accent: '#ef4444', warning: '#f59e0b', danger: '#ef4444' },
-            { name: 'Amber', primary: '#d97706', secondary: '#92400e', accent: '#f59e0b', warning: '#f59e0b', danger: '#ef4444' },
+            { name: 'Amber', primary: '#d97706', secondary: '#92400e', accent: '#f59e0b', danger: '#ef4444' },
             { name: 'Emerald', primary: '#059669', secondary: '#064e3b', accent: '#10b981', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Blue', primary: '#2563eb', secondary: '#1e3a8a', accent: '#3b82f6', warning: '#f59e0b', danger: '#ef4444' },
             { name: 'Cyan', primary: '#0891b2', secondary: '#164e63', accent: '#06b6d4', warning: '#f59e0b', danger: '#ef4444' },
@@ -918,7 +921,8 @@
                 this.duration = 40 * 60 * 1000; // 40 minutes in milliseconds
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
-                this.micInput = 'Mic1';
+                this.micInputNumber = 1; // Renamed from videoInputNumber to micInputNumber
+                this.timerInputNumber = 2; // NEW: Property for vMix Title Editor Timer Input
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
                 this.isLocked = true; // State for settings/reset (controlled by circular lock button)
@@ -948,6 +952,9 @@
                 this.updateTimerControlsLockState(); 
                 // Removed initial vMix connection check on page load to prevent immediate error
                 // this.testVMixConnection(); 
+
+                // Initial update of connection status to 'Disconnected' on load
+                updateConnectionStatus(false);
             }
 
             setupEventListeners() {
@@ -966,11 +973,15 @@
                 });
 
                 // Attach a single global click/touch listener to the body for both unlock and timer toggle
-                // The 'click' event generally works for single taps on touch devices.
-                // For more complex touch gestures (e.g., drag, swipe), additional touchstart/touchmove/touchend listeners would be needed.
                 document.body.addEventListener('click', this.handleGlobalInteraction.bind(this));
                 // Global keydown for spacebar interaction (also using the unified handler)
                 document.body.addEventListener('keydown', this.handleGlobalInteraction.bind(this));
+
+                // Listen for fullscreen change events to update button icon
+                document.addEventListener('fullscreenchange', this.updateFullscreenButton.bind(this));
+                document.addEventListener('webkitfullscreenchange', this.updateFullscreenButton.bind(this));
+                document.addEventListener('mozfullscreenchange', this.updateFullscreenButton.bind(this));
+                document.addEventListener('MSFullscreenChange', this.updateFullscreenButton.bind(this));
             }
 
             // Helper to check if event target is an explicitly excluded element
@@ -978,6 +989,7 @@
                 const settingsToggle = document.getElementById('settingsToggle');
                 const resetBtn = document.getElementById('resetBtn');
                 const lockButton = document.getElementById('lockButton');
+                const fullscreenToggle = document.getElementById('fullscreenToggle'); // Added fullscreen toggle
                 const settingsPanel = document.getElementById('settingsPanel');
                 const importFile = document.getElementById('importFile'); // Hidden input
                 const micStatus = document.getElementById('micStatus'); // Mic status area
@@ -988,6 +1000,7 @@
                     if (currentTarget === settingsToggle || 
                         currentTarget === resetBtn || 
                         currentTarget === lockButton ||
+                        currentTarget === fullscreenToggle || // Added fullscreen toggle
                         currentTarget === settingsPanel ||
                         currentTarget === importFile ||
                         currentTarget === micStatus ||
@@ -1133,8 +1146,10 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Lime'));
                 
-                // Correct vMix command for audio ON
-                this.updateMicStatus(true); 
+                // Control microphone status (AudioOn/Off)
+                this.updateMicrophoneStatus(true); 
+                // Start vMix Title Editor Timer
+                this.sendVMixCommand(`StartTimer&Input=${this.timerInputNumber}`);
                 this.animateTimer();
                 this.saveSettings();
             }
@@ -1147,8 +1162,10 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Red'));
                 
-                // Correct vMix command for audio OFF
-                this.updateMicStatus(false);
+                // Control microphone status (AudioOn/Off)
+                this.updateMicrophoneStatus(false);
+                // Pause vMix Title Editor Timer
+                this.sendVMixCommand(`PauseTimer&Input=${this.timerInputNumber}`);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
@@ -1163,8 +1180,10 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Lime'));
                 
-                // Correct vMix command for audio ON
-                this.updateMicStatus(true);
+                // Control microphone status (AudioOn/Off)
+                this.updateMicrophoneStatus(true);
+                // Start vMix Title Editor Timer
+                this.sendVMixCommand(`StartTimer&Input=${this.timerInputNumber}`);
                 this.animateTimer();
                 this.saveSettings();
             }
@@ -1184,8 +1203,10 @@
                 this.clearFlashing();
                 this.applyColorScheme(getSchemeByName('Zinc'));
                 
-                // Correct vMix command for audio OFF
-                this.updateMicStatus(false);
+                // Control microphone status (AudioOn/Off)
+                this.updateMicrophoneStatus(false);
+                // Stop vMix Title Editor Timer
+                this.sendVMixCommand(`StopTimer&Input=${this.timerInputNumber}`);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
@@ -1284,7 +1305,7 @@
             onTimerExpired() {
                 this.isRunning = false;
                 
-                this.updateMicStatus(false);
+                this.updateMicrophoneStatus(false);
                 this.clearFlashing();
                 
                 document.body.style.animation = 'pulse-red 1s ease-in-out 3';
@@ -1306,7 +1327,6 @@
                 const url = `http://${this.vmixIP}:${this.vmixPort}/api/?Function=${command}`;
                 
                 try {
-                    // Removed mode: 'no-cors' to allow response checking
                     const response = await fetch(url, { method: 'GET' }); 
                     if (!response.ok) {
                         console.error(`vMix command failed for ${command}: HTTP Status ${response.status}`);
@@ -1323,24 +1343,22 @@
                 }
             }
 
-            // Corrected updateMicStatus to use proper vMix API commands
-            async updateMicStatus(isLive) {
+            // Updated to control microphone status (AudioOn/Off)
+            async updateMicrophoneStatus(isLive) {
                 const micStatus = document.getElementById('micStatus');
                 let commandSent = false;
                 if (isLive) {
                     micStatus.className = 'mic-status mic-live';
-                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>';
-                    commandSent = await this.sendVMixCommand(`AudioOn&Input=${this.micInput}`);
+                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Live</span>'; 
+                    commandSent = await this.sendVMixCommand(`AudioOn&Input=${this.micInputNumber}`); // Changed to AudioOn
                 } else {
                     micStatus.className = 'mic-status mic-muted';
-                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>';
-                    commandSent = await this.sendVMixCommand(`AudioOff&Input=${this.micInput}`);
+                    micStatus.innerHTML = '<div class="mic-indicator"></div><span>Microphone Muted</span>'; 
+                    commandSent = await this.sendVMixCommand(`AudioOff&Input=${this.micInputNumber}`); // Changed to AudioOff
                 }
-                // Optional: show a notification if mic command failed
+                // Optional: show a notification if command failed
                 if (!commandSent && this.isConnectedToVMix) {
-                    // Only show if we think we are connected, but command still failed.
-                    // If not connected, the generic "vMix Disconnected" message is enough.
-                    this.showNotification(`Failed to send vMix mic command. Check Input Name: ${this.micInput}`, false);
+                    this.showNotification(`Failed to send vMix microphone command. Check Input Number: ${this.micInputNumber}`, false);
                 }
             }
 
@@ -1373,7 +1391,8 @@
                     duration: this.duration,
                     vmixIP: this.vmixIP,
                     vmixPort: this.vmixPort,
-                    micInput: this.micInput,
+                    micInputNumber: this.micInputNumber, // Changed to micInputNumber
+                    timerInputNumber: this.timerInputNumber, // NEW: Added timerInputNumber
                     timerScale: document.documentElement.style.getPropertyValue('--timer-scale') || '1',
                     timerStyle: this.currentStyle,
                     colors: {
@@ -1403,7 +1422,20 @@
                 if (settings.duration) this.duration = settings.duration;
                 if (settings.vmixIP) this.vmixIP = settings.vmixIP;
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
-                if (settings.micInput) this.micInput = settings.micInput;
+                // Load micInputNumber, prioritizing new setting, then old videoInputNumber, then old micInput
+                if (typeof settings.micInputNumber !== 'undefined') {
+                    this.micInputNumber = settings.micInputNumber;
+                } else if (typeof settings.videoInputNumber !== 'undefined') { // Fallback for previous change
+                    this.micInputNumber = settings.videoInputNumber;
+                } else if (settings.micInput) { // Fallback for original change
+                    this.micInputNumber = parseInt(settings.micInput) || 1;
+                }
+                
+                // Load timerInputNumber
+                if (typeof settings.timerInputNumber !== 'undefined') {
+                    this.timerInputNumber = settings.timerInputNumber;
+                }
+                
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
                 
                 this.isLocked = typeof settings.isLocked !== 'undefined' ? settings.isLocked : true; // Default settings to locked
@@ -1412,7 +1444,8 @@
                 document.getElementById('timerDuration').value = this.duration / (60 * 1000);
                 document.getElementById('vmixIP').value = this.vmixIP;
                 document.getElementById('vmixPort').value = this.vmixPort;
-                document.getElementById('micInput').value = this.micInput;
+                document.getElementById('micInputNumber').value = this.micInputNumber; // Update mic input field
+                document.getElementById('timerInputNumber').value = this.timerInputNumber; // Update timer input field
                 document.getElementById('timerStyle').value = this.currentStyle;
                 
                 // Ensure timer scale is always 1 as zoom is removed
@@ -1448,10 +1481,10 @@
                     
                     if (this.isRunning) {
                         this.animateTimer();
-                        this.updateMicStatus(true);
+                        this.updateMicrophoneStatus(true); // Call mic status update
                     } else if (this.isPaused) {
                         this.updateBodyColors(getSchemeByName('Red'));
-                        this.updateMicStatus(false);
+                        this.updateMicrophoneStatus(false); // Call mic status update
                     } else {
                         this.updateBodyColors(getSchemeByName('Zinc'));
                     }
@@ -1460,6 +1493,13 @@
                 }
                 this.updateLockState(); // Update the settings/reset lock UI (and controls visibility)
                 this.updateTimerControlsLockState(); // Update the click-anywhere lock UI
+
+                // Initialize connection status based on actual connection, not just on load
+                if (this.isConnectedToVMix) { // If a previous session was connected, reflect it
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false); // Default to disconnected
+                }
             }
 
             // Updates the UI for the settings/reset lock button and top controls visibility
@@ -1517,7 +1557,6 @@
                 const url = `http://${this.vmixIP}:${this.vmixPort}/api/`; // Test basic API endpoint
                 
                 try {
-                    // Removed mode: 'no-cors' to correctly check response.ok
                     const response = await fetch(url, { method: 'GET' }); 
                     this.isConnectedToVMix = response.ok;
                     updateConnectionStatus(this.isConnectedToVMix);
@@ -1535,6 +1574,18 @@
                     this.showNotification('Failed to connect to vMix. Check IP/Port and vMix running.', false);
                 }
             }
+
+            // Function to update the fullscreen button icon
+            updateFullscreenButton() {
+                const fullscreenIcon = document.getElementById('fullscreenIcon');
+                if (document.fullscreenElement) {
+                    // Currently in fullscreen, show exit fullscreen icon
+                    fullscreenIcon.innerHTML = `<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>`;
+                } else {
+                    // Not in fullscreen, show enter fullscreen icon
+                    fullscreenIcon.innerHTML = `<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>`;
+                }
+            }
         }
 
         // Initialize the controller
@@ -1550,7 +1601,10 @@
             // Update controller's properties first
             controller.vmixIP = document.getElementById('vmixIP').value;
             controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
-            controller.micInput = document.getElementById('micInput').value;
+            // Updated to use micInputNumber
+            controller.micInputNumber = parseInt(document.getElementById('micInputNumber').value);
+            // Updated to use timerInputNumber
+            controller.timerInputNumber = parseInt(document.getElementById('timerInputNumber').value);
             
             // Then run the connection test using the controller's method
             controller.testVMixConnection();
@@ -1590,14 +1644,16 @@
             document.getElementById('timerStyle').value = 'modern';
             document.getElementById('vmixIP').value = '127.0.0.1';
             document.getElementById('vmixPort').value = 8088;
-            document.getElementById('micInput').value = 'Mic1';
+            document.getElementById('micInputNumber').value = 1; // Changed to mic input
+            document.getElementById('timerInputNumber').value = 2; // Changed to timer input
             
             controller.updateDuration(40);
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
             controller.vmixIP = '127.0.0.1';
             controller.vmixPort = 8088;
-            controller.micInput = 'Mic1';
+            controller.micInputNumber = 1; // Changed to mic input
+            controller.timerInputNumber = 2; // Changed to timer input
             controller.saveSettings();
             controller.updateDisplay();
 
@@ -1644,6 +1700,21 @@
         function toggleLock() {
             controller.isLocked = !controller.isLocked; // This toggles the settings/reset lock
             controller.updateLockState();
+        }
+
+        // Fullscreen functionality
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                document.documentElement.requestFullscreen().catch(e => {
+                    console.error("Error attempting to enable full-screen mode:", e);
+                });
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
         }
 
         // Close settings panel when clicking outside
