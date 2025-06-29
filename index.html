@@ -669,6 +669,9 @@
                 font-size: calc(4rem * var(--timer-scale));
                 letter-spacing: calc(3px * var(--timer-scale));
             }
+            .timer-ms { /* Adjust ms font size for smaller screens */
+                font-size: calc(1.8rem * var(--timer-scale));
+            }
 
             .control-buttons {
                 flex-direction: column;
@@ -685,6 +688,15 @@
                 flex-direction: column;
                 top: 10px;
                 right: 10px;
+                left: 10px; /* Ensure controls are within screen bounds */
+                gap: 10px; /* Smaller gap for mobile */
+            }
+            .connection-panel { /* Adjust padding for connection status on mobile */
+                padding: 12px 16px;
+            }
+            .settings-toggle, .reset-btn, .fullscreen-toggle, .lock-button {
+                width: 48px; /* Smaller buttons for mobile */
+                height: 48px;
             }
 
             .settings-panel {
@@ -693,6 +705,7 @@
                 top: 120px;
                 min-width: auto;
                 max-width: none;
+                padding: 16px; /* Smaller padding for settings panel */
             }
 
             .color-schemes {
@@ -704,8 +717,46 @@
                 right: 10px;
             }
 
-            .click-to-unlock-overlay {
+            .click-to-unlock-overlay span {
                 font-size: calc(1.5rem * var(--timer-scale));
+                padding: 10px 20px; /* Smaller padding for overlay text */
+            }
+        }
+
+        /* NEW: Specific adjustments for very small screens (e.g., phones in portrait) */
+        @media (max-width: 480px) {
+            .main-panel {
+                padding: calc(30px * var(--timer-scale));
+                margin: 10px;
+            }
+            .timer-main {
+                font-size: calc(3.5rem * var(--timer-scale));
+            }
+            .timer-ms {
+                font-size: calc(1.5rem * var(--timer-scale));
+            }
+            .mic-status {
+                font-size: calc(1rem * var(--timer-scale));
+                padding: calc(12px * var(--timer-scale)) calc(18px * var(--timer-scale));
+            }
+            .settings-panel {
+                top: 100px;
+                padding: 12px;
+            }
+            .settings-row label {
+                font-size: 0.8rem;
+            }
+            .settings-row input, .settings-row select {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+            .btn {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+            }
+            .click-to-unlock-overlay span {
+                font-size: calc(1.2rem * var(--timer-scale));
+                padding: 8px 16px;
             }
         }
     </style>
@@ -791,9 +842,10 @@
                 <label>Microphone Input Number</label>
                 <input type="number" id="micInputNumber" value="1" min="1" placeholder="1">
             </div>
+            <!-- NEW: Input for Video Input Number -->
             <div class="settings-row">
-                <label>Timer Input Number (Title Editor)</label>
-                <input type="number" id="timerInputNumber" value="2" min="1" placeholder="2">
+                <label>Video Input Number</label> 
+                <input type="number" id="videoInputNumber" value="1" min="1" placeholder="1">
             </div>
             <!-- Moved Connect and Test buttons here -->
             <div class="settings-buttons">
@@ -926,8 +978,8 @@
                 this.duration = 30 * 60 * 1000; // 30 minutes in milliseconds (changed from 40)
                 this.vmixIP = '127.0.0.1';
                 this.vmixPort = 8088;
-                this.micInputNumber = 1; // Renamed from videoInputNumber to micInputNumber
-                this.timerInputNumber = 2; // NEW: Property for vMix Title Editor Timer Input
+                this.micInputNumber = 1; 
+                this.videoInputNumber = 1; // NEW: Property for vMix Video Input Number
                 this.animationFrame = null;
                 this.currentStyle = 'modern';
                 this.isLocked = true; // State for settings/reset (controlled by circular lock button)
@@ -1153,8 +1205,8 @@
                 
                 // Control microphone status (AudioOn/Off)
                 this.updateMicrophoneStatus(true); 
-                // Start vMix Title Editor Timer
-                this.sendVMixCommand(`StartTimer&Input=${this.timerInputNumber}`);
+                // NEW: Send Play command to video input
+                this.sendVMixCommand(`Play&Input=${this.videoInputNumber}`);
                 this.animateTimer();
                 this.saveSettings();
             }
@@ -1169,8 +1221,8 @@
                 
                 // Control microphone status (AudioOn/Off)
                 this.updateMicrophoneStatus(false);
-                // Pause vMix Title Editor Timer
-                this.sendVMixCommand(`PauseTimer&Input=${this.timerInputNumber}`);
+                // NEW: Send Pause command to video input
+                this.sendVMixCommand(`Pause&Input=${this.videoInputNumber}`);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
@@ -1187,8 +1239,8 @@
                 
                 // Control microphone status (AudioOn/Off)
                 this.updateMicrophoneStatus(true);
-                // Start vMix Title Editor Timer
-                this.sendVMixCommand(`StartTimer&Input=${this.timerInputNumber}`);
+                // NEW: Send Play command to video input
+                this.sendVMixCommand(`Play&Input=${this.videoInputNumber}`);
                 this.animateTimer();
                 this.saveSettings();
             }
@@ -1210,8 +1262,8 @@
                 
                 // Control microphone status (AudioOn/Off)
                 this.updateMicrophoneStatus(false);
-                // Stop vMix Title Editor Timer
-                this.sendVMixCommand(`StopTimer&Input=${this.timerInputNumber}`);
+                // NEW: Send Stop command to video input
+                this.sendVMixCommand(`Stop&Input=${this.videoInputNumber}`);
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
@@ -1396,8 +1448,8 @@
                     duration: this.duration,
                     vmixIP: this.vmixIP,
                     vmixPort: this.vmixPort,
-                    micInputNumber: this.micInputNumber, // Changed to micInputNumber
-                    timerInputNumber: this.timerInputNumber, // NEW: Added timerInputNumber
+                    micInputNumber: this.micInputNumber, 
+                    videoInputNumber: this.videoInputNumber, // NEW: Added videoInputNumber to settings
                     timerScale: document.documentElement.style.getPropertyValue('--timer-scale') || '1',
                     timerStyle: this.currentStyle,
                     colors: {
@@ -1427,20 +1479,21 @@
                 if (settings.duration) this.duration = settings.duration;
                 if (settings.vmixIP) this.vmixIP = settings.vmixIP;
                 if (settings.vmixPort) this.vmixPort = settings.vmixPort;
-                // Load micInputNumber, prioritizing new setting, then old videoInputNumber, then old micInput
+                
+                // Load micInputNumber
                 if (typeof settings.micInputNumber !== 'undefined') {
                     this.micInputNumber = settings.micInputNumber;
-                } else if (typeof settings.videoInputNumber !== 'undefined') { // Fallback for previous change
-                    this.micInputNumber = settings.videoInputNumber;
-                } else if (settings.micInput) { // Fallback for original change
+                } else if (typeof settings.videoInputNumber_old_mic !== 'undefined') { // Fallback for previous mic input rename
+                    this.micInputNumber = settings.videoInputNumber_old_mic;
+                } else if (settings.micInput) { // Fallback for original micInput
                     this.micInputNumber = parseInt(settings.micInput) || 1;
                 }
                 
-                // Load timerInputNumber
-                if (typeof settings.timerInputNumber !== 'undefined') {
-                    this.timerInputNumber = settings.timerInputNumber;
+                // Load videoInputNumber (NEW)
+                if (typeof settings.videoInputNumber !== 'undefined') {
+                    this.videoInputNumber = settings.videoInputNumber;
                 }
-                
+
                 if (settings.timerStyle) this.currentStyle = settings.timerStyle;
                 
                 this.isLocked = typeof settings.isLocked !== 'undefined' ? settings.isLocked : true; // Default settings to locked
@@ -1449,8 +1502,8 @@
                 document.getElementById('timerDuration').value = this.duration / (60 * 1000);
                 document.getElementById('vmixIP').value = this.vmixIP;
                 document.getElementById('vmixPort').value = this.vmixPort;
-                document.getElementById('micInputNumber').value = this.micInputNumber; // Update mic input field
-                document.getElementById('timerInputNumber').value = this.timerInputNumber; // Update timer input field
+                document.getElementById('micInputNumber').value = this.micInputNumber; 
+                document.getElementById('videoInputNumber').value = this.videoInputNumber; // NEW: Update video input field
                 document.getElementById('timerStyle').value = this.currentStyle;
                 
                 // Ensure timer scale is always 1 as zoom is removed
@@ -1608,8 +1661,8 @@
             controller.vmixPort = parseInt(document.getElementById('vmixPort').value);
             // Updated to use micInputNumber
             controller.micInputNumber = parseInt(document.getElementById('micInputNumber').value);
-            // Updated to use timerInputNumber
-            controller.timerInputNumber = parseInt(document.getElementById('timerInputNumber').value);
+            // NEW: Updated to use videoInputNumber
+            controller.videoInputNumber = parseInt(document.getElementById('videoInputNumber').value);
             
             // Then run the connection test using the controller's method
             controller.testVMixConnection();
@@ -1649,16 +1702,16 @@
             document.getElementById('timerStyle').value = 'modern';
             document.getElementById('vmixIP').value = '127.0.0.1';
             document.getElementById('vmixPort').value = 8088;
-            document.getElementById('micInputNumber').value = 1; // Changed to mic input
-            document.getElementById('timerInputNumber').value = 2; // Changed to timer input
+            document.getElementById('micInputNumber').value = 1; 
+            document.getElementById('videoInputNumber').value = 1; // NEW: Reset video input
             
             controller.updateDuration(30); // Changed default to 30
             controller.updateScale(1);
             controller.updateTimerStyle('modern');
             controller.vmixIP = '127.0.0.1';
             controller.vmixPort = 8088;
-            controller.micInputNumber = 1; // Changed to mic input
-            controller.timerInputNumber = 2; // Changed to timer input
+            controller.micInputNumber = 1; 
+            controller.videoInputNumber = 1; // NEW: Reset video input
             controller.saveSettings();
             controller.updateDisplay();
 
