@@ -1276,8 +1276,8 @@
                 this.applyColorScheme(getSchemeByName('Zinc'));
                 
                 this.updateMicrophoneStatus(false);
-                // Send Stop command to vMix 2 (Timer/Video)
-                this.sendVMixCommand(`Stop&Input=${this.timerVideoInputNumber}`, 'vmix2');
+                // Send Restart command to vMix 2 (Timer/Video)
+                this.sendVMixCommand(`Restart&Input=${this.timerVideoInputNumber}`, 'vmix2'); // Changed to Restart
                 if (this.animationFrame) {
                     cancelAnimationFrame(this.animationFrame);
                 }
